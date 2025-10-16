@@ -1,0 +1,34 @@
+/* src/styles.css */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Inter, Roboto, Arial, sans-serif; background: #fbfbfb; color: #222; }
+.app { max-width: 1000px; margin: 18px auto; padding: 12px; }
+
+.nav { display:flex; gap:8px; margin-bottom:12px; align-items:center; flex-wrap:wrap; }
+.btn { padding:6px 10px; border-radius:8px; border:1px solid #dcdcdc; background: #fff; cursor:pointer; }
+.btn:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.form { border:1px solid #eee; padding:12px; border-radius:8px; margin:10px 0; background:#fff; }
+.row { display:flex; gap:8px; align-items:center; margin:8px 0; }
+.input { padding:8px; border-radius:6px; border:1px solid #ddd; width:100%; font-size:14px; }
+.card { border:1px solid #e6e6e6; padding:10px; border-radius:8px; margin:10px 0; background:white; }
+.small { font-size:0.9em; color:#666; }
+.msg { padding:10px; margin:10px 0; border-radius:8px; }
+.msg.success { background:#eafaf0; border:1px solid #56b26f; color:#104a28; }
+.msg.error { background:#fff0f0; border:1px solid #d9534f; color:#4b0b0b; }
+
+/* images */
+.product-img {
+  width: 100%;
+  max-width: 160px;
+  max-height: 160px;
+  height: auto;
+  object-fit: cover; /* сохраняет пропорции и не ломает вёрстку */
+  border-radius: 8px;
+  display:block;
+}
+
+/* responsive */
+@media (max-width: 640px) {
+  .nav { gap:6px; }
+  .product-img { max-width: 120px; max-height: 120px; }
+  .app { padding: 8px; }
+}
