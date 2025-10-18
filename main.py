@@ -8,7 +8,7 @@ REST API для управления пользователями и ферма�
 import os
 import logging
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import FastAPI, Depends, HTTPException, status, Request, Form
 from sqlalchemy.orm import Session
@@ -23,6 +23,8 @@ from utils.security import hash_password, verify_password
 from utils.auth import create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
 from routers import auth as auth_router
 from routers import products as products_router
+from routers import farms as farms_router  
+from sqlalchemy.orm import relationship
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -32,6 +34,7 @@ app = FastAPI(title="Gryadka API")
 
 # Подключение роутера аутентификации
 app.include_router(auth_router.router, prefix="/api")
+app.include_router(farms_router.router)
 app.include_router(products_router.router)
 if os.getenv("SKIP_CREATE_ALL", "false").lower() != "true":
     # Создание таблиц в базе данных для разработки
@@ -279,53 +282,6 @@ def create_user(user_data: user_schema.UserCreate,
         raise HTTPException(status_code=500, detail="Internal Server Error")
     return db_user
 
-
-@app.post("/api/farms/", response_model=farm_schema.Farm, status_code=201)
-def create_farm(farm_data: farm_schema.FarmCreate,
-                current_user: user_model.User = Depends(get_current_user),
-                db: Session = Depends(get_db)):
-    """
-    Создание новой фермы.
-    
-    Права доступа:
-    - Только пользователи с ролью 'farmer' или 'admin' могут создавать фермы.
-    - Пользователь 'farmer' может создавать фермы только для себя (owner_id должен совпадать с current_user.id).
-    - Пользователь 'admin' может создавать фермы для любого пользователя.
-    
-    Args:
-        farm_data (farm_schema.FarmCreate): Данные новой фермы (name, description, owner_id).
-        current_user (user_model.User): Текущий аутентифицированный пользователь.
-        db (Session): Сессия базы данных SQLAlchemy.
-        
-    Returns:
-        farm_model.Farm: Объект созданной фермы.
-        
-    Raises:
-        HTTPException: Если у текущего пользователя недостаточно прав или если происходит ошибка базы данных.
-    """
-    if current_user.role not in ("farmer", "admin"):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
-
-    if farm_data.owner_id != current_user.id and current_user.role != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot create farm for another user")
-
-    db_farm = farm_model.Farm(
-        name=farm_data.name,
-        description=farm_data.description,
-        owner_id=farm_data.owner_id,
-    )
-    db.add(db_farm)
-    try:
-        db.commit()
-        db.refresh(db_farm)
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Database integrity error")
-    except Exception as exc:
-        db.rollback()
-        logger.exception("Unexpected DB error creating farm: %s", exc)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-    return db_farm
 
 
 @app.get("/api/users/me", response_model=user_schema.User)

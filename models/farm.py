@@ -8,7 +8,7 @@ SQLAlchemy модель для представления фермы в базе
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text
 from sqlalchemy.sql import func
 from database.database import Base
-
+from sqlalchemy.orm import relationship
 
 class Farm(Base):
     """
@@ -31,6 +31,7 @@ class Farm(Base):
     description = Column(Text, nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    products = relationship("Product", back_populates="farm")
 
     def __repr__(self):
         return f"<Farm id={self.id} name={self.name}>"
