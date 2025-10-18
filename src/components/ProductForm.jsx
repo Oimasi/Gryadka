@@ -3,432 +3,501 @@ import React, { useEffect, useState } from "react";
 import {
   createProduct,
   updateProduct,
-  getFarms as apiGetFarms,
-  uploadProductMedia,
-  upsertPassport // Добавляем новый метод для обновления паспорта
+  uploadProductMediaDirect,
+  confirmMediaUpload,
+  upsertPassport,
+  getFarms
 } from "../api";
 
-// Компонент для редактирования сертификата
-const CertificateItem = ({ cert, onChange, onRemove, index }) => {
+
+// Компонент для отдельного сертификата
+function CertificateItem({ cert, onChange, onRemove }) {
+  const idBase = cert._uid ? `cert-${cert._uid}` : `cert-${Math.random().toString(36).slice(2, 9)}`;
   return (
-    <div className="card" style={{ marginBottom: 8 }}>
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <span>Сертификат #{index + 1}</span>
-        <button className="btn" type="button" onClick={onRemove} style={{ fontSize: 12 }}>
-          Удалить
-        </button>
+    <div className="p-3 mb-3 border rounded bg-white" aria-live="polite">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <strong>Сертификат</strong>
+        <button type="button" className="text-sm text-red-600" onClick={onRemove}>Удалить</button>
       </div>
-      <div className="row">
-        <label className="small">Название</label>
-        <input
-          className="input"
-          value={cert.name || ""}
-          onChange={(e) => onChange({ ...cert, name: e.target.value })}
-          required
-          placeholder="Название сертификата"
-        />
+
+      <div style={{ marginBottom: 8 }}>
+        <label className="label" htmlFor={`${idBase}-name`}>Название</label>
+        <input id={`${idBase}-name`} name={`cert_name_${cert._uid || ""}`} className="w-full input" value={cert.name || ""} onChange={(e) => onChange({ ...cert, name: e.target.value })} placeholder="" required />
       </div>
-      <div className="row">
-        <label className="small">Выдан</label>
-        <input
-          className="input"
-          value={cert.issuer || ""}
-          onChange={(e) => onChange({ ...cert, issuer: e.target.value })}
-          required
-          placeholder="Организация, выдавшая сертификат"
-        />
+
+      <div style={{ marginBottom: 8 }}>
+        <label className="label" htmlFor={`${idBase}-issuer`}>Выдан</label>
+        <input id={`${idBase}-issuer`} name={`cert_issuer_${cert._uid || ""}`} className="w-full input" value={cert.issuer || ""} onChange={(e) => onChange({ ...cert, issuer: e.target.value })} placeholder="" required />
       </div>
-      <div className="row">
-        <label className="small">Дата</label>
-        <input
-          type="date"
-          className="input"
-          value={cert.date || ""}
-          onChange={(e) => onChange({ ...cert, date: e.target.value })}
-        />
+
+      <div style={{ marginBottom: 8 }}>
+        <label className="label" htmlFor={`${idBase}-date`}>Дата</label>
+        <input id={`${idBase}-date`} name={`cert_date_${cert._uid || ""}`} type="date" className="w-full input" value={cert.date || ""} onChange={(e) => onChange({ ...cert, date: e.target.value })} />
       </div>
-      <div className="row">
-        <label className="small">Примечания</label>
-        <input
-          className="input"
-          value={cert.notes || ""}
-          onChange={(e) => onChange({ ...cert, notes: e.target.value })}
-          placeholder="Дополнительные сведения"
-        />
+
+      <div>
+        <label className="label" htmlFor={`${idBase}-notes`}>Примечания</label>
+        <input id={`${idBase}-notes`} name={`cert_notes_${cert._uid || ""}`} className="w-full input" value={cert.notes || ""} onChange={(e) => onChange({ ...cert, notes: e.target.value })} placeholder="" />
       </div>
     </div>
   );
-};
+}
 
-// Компонент для паспорта товара
-const ProductPassportForm = ({ initialPassport, onChange }) => {
-  const [passportData, setPassportData] = useState({
-    origin: "",
-    variety: "",
-    harvest_date: "",
-    certifications: [],
-    data: {}
-  });
 
-  // Инициализация данных при монтировании компонента
+function ProductPassportForm({ passport = null, onChange }) {
+  // защитный дефолт
+  const safePassport = passport || { origin: "", variety: "", harvest_date: "", certifications: [], data: {} };
+
+  // Зарезервированные ключи для датчиков
+  const RESERVED_SENSOR_KEYS = [
+    "Есть датчики",
+    "Средний pH за время выращивания",
+    "% измерений pH вне допустимого диапазона",
+    "Оценка pH",
+    "Последняя соленость почвы",
+    "Средняя соленость почвы за время выращивания",
+    "Оценка солености почвы",
+    "Средняя температура за время выращивания",
+    "Наличие резких перепадов температуры",
+    "Время сбора урожая",
+    "Чем измерялись данные",
+    "Дата последней калибровки pH-электродов",
+    "Фото площадки от шлюза",
+    "Местоположение точки ( координаты участка)",
+    "Последние значимые алерты",
+    "Краткая рекомендация от ИИ"
+  ];
+
+  // генератор uid для сертификатов
+  const genUid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  // Если у входящих сертификатов нет _uid — присвоим им устойчивые id (один раз).
   useEffect(() => {
-    if (initialPassport) {
-      setPassportData({
-        origin: initialPassport.origin || "",
-        variety: initialPassport.variety || "",
-        harvest_date: initialPassport.harvest_date ? 
-          new Date(initialPassport.harvest_date).toISOString().split('T')[0] : "",
-        certifications: [...initialPassport.certifications] || [],
-        data: { ...initialPassport.data } || {}
-      });
+    if (!passport) return;
+    const needAssign = (passport.certifications || []).some(c => !c._uid);
+    if (needAssign) {
+      const arr = (passport.certifications || []).map(c => c._uid ? c : { ...c, _uid: genUid() });
+      onChange && onChange({ ...safePassport, certifications: arr });
     }
-  }, [initialPassport]);
+    
+  }, []); // выполняется один раз при монтировании формы
 
-  // Обновление данных паспорта при изменении
-  useEffect(() => {
-    onChange(passportData);
-  }, [passportData, onChange]);
-
-  const handleAddCertificate = () => {
-    setPassportData(prev => ({
-      ...prev,
-      certifications: [
-        ...prev.certifications,
-        { name: "", issuer: "", date: "", notes: "" }
-      ]
-    }));
+  // Установка значения поля паспорта
+  const setField = (changes) => onChange && onChange({ ...safePassport, ...changes });
+  // Установка значения в data
+  const setDataKey = (k, v) => onChange && onChange({ ...safePassport, data: { ...(safePassport.data || {}), [k]: v } });
+  // Удаление значения из data
+  const removeDataKey = (k) => {
+    if (RESERVED_SENSOR_KEYS.includes(k)) return;
+    const d = { ...(safePassport.data || {}) };
+    delete d[k];
+    onChange && onChange({ ...safePassport, data: d });
   };
 
-  const handleUpdateCertificate = (index, cert) => {
-    setPassportData(prev => {
-      const newCerts = [...prev.certifications];
-      newCerts[index] = cert;
-      return { ...prev, certifications: newCerts };
-    });
+  const sensorsEnabled = Boolean((safePassport.data || {})["Есть датчики"]);
+
+  // Включение датчиков с дефолтными значениями
+  const enableSensorsDefaults = () => {
+    const d = { ...(safePassport.data || {}) };
+    if (d["Есть датчики"]) return; 
+    d["Есть датчики"] = true;
+    d["Средний pH за время выращивания"] = d["Средний pH за время выращивания"] ?? "";
+    d["% измерений pH вне допустимого диапазона"] = d["% измерений pH вне допустимого диапазона"] ?? "";
+    d["Оценка pH"] = d["Оценка pH"] ?? "";
+    d["Последняя соленость почвы"] = d["Последняя соленость почвы"] ?? "";
+    d["Средняя соленость почвы за время выращивания"] = d["Средняя соленость почвы за время выращивания"] ?? "";
+    d["Оценка солености почвы"] = d["Оценка солености почвы"] ?? "";
+    d["Средняя температура за время выращивания"] = d["Средняя температура за время выращивания"] ?? "";
+    d["Наличие резких перепадов температуры"] = d["Наличие резких перепадов температуры"] ?? "";
+    d["Время сбора урожая"] = d["Время сбора урожая"] ?? "";
+    d["Чем измерялись данные"] = d["Чем измерялись данные"] ?? "garsen v1.0.0";
+    d["Дата последней калибровки pH-электродов"] = d["Дата последней калибровки pH-электродов"] ?? "";
+    d["Фото площадки от шлюза"] = d["Фото площадки от шлюза"] ?? "Нет фото";
+    d["Местоположение точки ( координаты участка)"] = d["Местоположение точки ( координаты участка)"] ?? "";
+    d["Последние значимые алерты"] = d["Последние значимые алерты"] ?? "";
+    d["Краткая рекомендация от ИИ"] = d["Краткая рекомендация от ИИ"] ?? "";
+    onChange && onChange({ ...safePassport, data: d });
   };
 
-  const handleRemoveCertificate = (index) => {
-    setPassportData(prev => ({
-      ...prev,
-      certifications: prev.certifications.filter((_, i) => i !== index)
-    }));
+  // Отключение датчиков
+  const disableSensors = () => {
+    const d = { ...(safePassport.data || {}) };
+    delete d["Есть датчики"];
+    onChange && onChange({ ...safePassport, data: d });
+  };
+
+  // Добавление сертификата
+  const addCertificate = () => {
+    const newCert = { _uid: genUid(), name: "", issuer: "", date: "", notes: "" };
+    const arr = [...(safePassport.certifications || []), newCert];
+    onChange && onChange({ ...safePassport, certifications: arr });
+  };
+  // Обновление сертификата
+  const updateCertificate = (i, cert) => {
+    const arr = [...(safePassport.certifications || [])];
+    arr[i] = cert;
+    onChange && onChange({ ...safePassport, certifications: arr });
+  };
+  // Удаление сертификата
+  const removeCertificate = (i) => {
+    const arr = (safePassport.certifications || []).filter((_, idx) => idx !== i);
+    onChange && onChange({ ...safePassport, certifications: arr });
+  };
+
+  const [customKey, setCustomKey] = useState("");
+  const [customValue, setCustomValue] = useState("");
+  // Добавление пользовательского параметра
+  const addCustomParam = () => {
+    if (!customKey) return;
+    if (RESERVED_SENSOR_KEYS.includes(customKey)) {
+      setCustomKey("");
+      setCustomValue("");
+      return;
+    }
+    const d = { ...(safePassport.data || {}), [customKey]: customValue };
+    onChange && onChange({ ...safePassport, data: d });
+    setCustomKey("");
+    setCustomValue("");
   };
 
   return (
-    <div className="form" style={{ marginTop: 20 }}>
-      <h4>Паспорт товара</h4>
-      
-      <div className="row">
-        <label className="small">Происхождение</label>
-        <input
-          className="input"
-          value={passportData.origin}
-          onChange={(e) => setPassportData({ ...passportData, origin: e.target.value })}
-          placeholder="Например: Московская область"
-        />
+    <div className="mt-6">
+      <h4 className="text-lg font-semibold mb-3">Паспорт товара</h4>
+
+      {/* Поле происхождения */}
+      <div className="mb-3 row">
+        <label className="label" htmlFor="passport-origin">Происхождение</label>
+        <input id="passport-origin" name="passport_origin" className="w-full input" value={safePassport.origin || ""} onChange={(e) => setField({ origin: e.target.value })} placeholder="" />
       </div>
-      
-      <div className="row">
-        <label className="small">Сорт/вид</label>
-        <input
-          className="input"
-          value={passportData.variety}
-          onChange={(e) => setPassportData({ ...passportData, variety: e.target.value })}
-          placeholder="Например: Мелита F1"
-        />
+
+      {/* Поле сорта/вида */}
+      <div className="mb-3 row">
+        <label className="label" htmlFor="passport-variety">Сорт / вид</label>
+        <input id="passport-variety" name="passport_variety" className="w-full input" value={safePassport.variety || ""} onChange={(e) => setField({ variety: e.target.value })} placeholder="" />
       </div>
-      
-      <div className="row">
-        <label className="small">Дата сбора урожая</label>
-        <input
-          type="date"
-          className="input"
-          value={passportData.harvest_date}
-          onChange={(e) => setPassportData({ ...passportData, harvest_date: e.target.value })}
-        />
+
+      {/* Поле даты сбора урожая */}
+      <div className="mb-4 row">
+        <label className="label" htmlFor="passport-harvest">Дата сбора урожая</label>
+        <input id="passport-harvest" name="passport_harvest_date" type="date" className="w-full input" value={safePassport.harvest_date || ""} onChange={(e) => setField({ harvest_date: e.target.value })} />
       </div>
-      
-      <div style={{ marginTop: 15 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-          <h5>Сертификаты</h5>
-          <button className="btn" type="button" onClick={handleAddCertificate} style={{ fontSize: 12 }}>
-            + Добавить
-          </button>
+
+      {/* Секция сертификатов */}
+      <div className="mb-4">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h5 className="font-medium">Сертификаты</h5>
+          <button type="button" className="text-sm text-blue-600" onClick={addCertificate}>+ Добавить</button>
         </div>
-        
-        {passportData.certifications.length === 0 ? (
-          <div className="small" style={{ color: "#666", textAlign: "center", padding: 15 }}>
-            Нет сертификатов
-          </div>
-        ) : (
-          passportData.certifications.map((cert, index) => (
-            <CertificateItem
-              key={index}
-              cert={cert}
-              index={index}
-              onChange={(updatedCert) => handleUpdateCertificate(index, updatedCert)}
-              onRemove={() => handleRemoveCertificate(index)}
+
+        {(!safePassport.certifications || safePassport.certifications.length === 0) && <div className="text-sm text-gray-500 mt-3">Нет сертификатов</div>}
+        {(safePassport.certifications || []).map((c, i) => (
+          <CertificateItem
+            key={c._uid || i}
+            cert={c}
+            onChange={(updated) => updateCertificate(i, updated)}
+            onRemove={() => removeCertificate(i)}
+          />
+        ))}
+      </div>
+
+      {/* Секция датчиков */}
+      <div className="mb-4 border-t pt-4">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <h5 className="font-medium">Датчики / сенсоры</h5>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <label className="label" htmlFor="has-sensors" style={{ margin: 0 }}>Есть датчики</label>
+            <input
+              id="has-sensors"
+              type="checkbox"
+              name="has_sensors"
+              checked={sensorsEnabled}
+              onChange={(e) => e.target.checked ? enableSensorsDefaults() : disableSensors()}
+              aria-label="Есть датчики"
             />
-          ))
+          </div>
+        </div>
+
+        {sensorsEnabled && (
+          <div className="sensor-area">
+            {/* Поля для pH */}
+            <div className="responsive-grid">
+              <div className="row">
+                <label className="label" htmlFor="sensor-avg-ph">Средний pH за время выращивания</label>
+                <input id="sensor-avg-ph" name="sensor_avg_ph" className="w-full input" type="number" step="0.01" value={safePassport.data["Средний pH за время выращивания"] || ""} onChange={(e) => setDataKey("Средний pH за время выращивания", e.target.value)} required />
+              </div>
+
+              <div className="row">
+                <label className="label" htmlFor="sensor-ph-out"> % измерений pH вне допустимого диапазона</label>
+                <input id="sensor-ph-out" name="sensor_ph_out_of_range" className="w-full input" type="number" step="0.1" value={safePassport.data["% измерений pH вне допустимого диапазона"] || ""} onChange={(e) => setDataKey("% измерений pH вне допустимого диапазона", e.target.value)} required />
+              </div>
+            </div>
+
+            <div className="row">
+              <label className="label" htmlFor="sensor-ph-rating">Оценка pH</label>
+              <select id="sensor-ph-rating" name="sensor_ph_rating" className="w-full input" value={safePassport.data["Оценка pH"] || ""} onChange={(e) => setDataKey("Оценка pH", e.target.value)} required>
+                <option value="">— выберите —</option>
+                <option value="Хорошая">Хорошая</option>
+                <option value="Средняя">Средняя</option>
+                <option value="Плохая">Плохая</option>
+              </select>
+            </div>
+
+            {/* Поля для солености */}
+            <div className="responsive-grid" style={{ marginTop: 8 }}>
+              <div className="row">
+                <label className="label" htmlFor="sensor-last-salinity">Последняя соленость почвы</label>
+                <input id="sensor-last-salinity" name="sensor_last_salinity" className="w-full input" type="number" step="0.01" value={safePassport.data["Последняя соленость почвы"] || ""} onChange={(e) => setDataKey("Последняя соленость почвы", e.target.value)} />
+              </div>
+              <div className="row">
+                <label className="label" htmlFor="sensor-avg-salinity">Средняя соленость почвы за время выращивания</label>
+                <input id="sensor-avg-salinity" name="sensor_avg_salinity" className="w-full input" type="number" step="0.01" value={safePassport.data["Средняя соленость почвы за время выращивания"] || ""} onChange={(e) => setDataKey("Средняя соленость почвы за время выращивания", e.target.value)} />
+              </div>
+            </div>
+
+            <div className="row">
+              <label className="label" htmlFor="sensor-salinity-rating">Оценка солености почвы</label>
+              <select id="sensor-salinity-rating" name="sensor_salinity_rating" className="w-full input" value={safePassport.data["Оценка солености почвы"] || ""} onChange={(e) => setDataKey("Оценка солености почвы", e.target.value)}>
+                <option value="">— выберите —</option>
+                <option value="Хорошая">Хорошая</option>
+                <option value="Средняя">Средняя</option>
+                <option value="Плохая">Плохая</option>
+              </select>
+            </div>
+
+            {/* Поля для температуры */}
+            <div className="responsive-grid" style={{ marginTop: 8 }}>
+              <div className="row">
+                <label className="label" htmlFor="sensor-avg-temp">Средняя температура за время выращивания</label>
+                <input id="sensor-avg-temp" name="sensor_avg_temp" className="w-full input" value={safePassport.data["Средняя температура за время выращивания"] || ""} onChange={(e) => setDataKey("Средняя температура за время выращивания", e.target.value)} />
+              </div>
+              <div className="row">
+                <label className="label" htmlFor="sensor-temp-spikes">Наличие резких перепадов температуры</label>
+                <select id="sensor-temp-spikes" name="sensor_temp_spikes" className="w-full input" value={safePassport.data["Наличие резких перепадов температуры"] || ""} onChange={(e) => setDataKey("Наличие резких перепадов температуры", e.target.value)}>
+                  <option value="">— выберите —</option>
+                  <option value="Да">Да</option>
+                  <option value="Нет">Нет</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Поля для других параметров датчиков */}
+            <div className="row">
+              <label className="label" htmlFor="sensor-harvest-time">Время сбора урожая (по данным)</label>
+              <input id="sensor-harvest-time" name="sensor_harvest_time" className="w-full input" value={safePassport.data["Время сбора урожая"] || ""} onChange={(e) => setDataKey("Время сбора урожая", e.target.value)} />
+            </div>
+
+            <div className="row">
+              <label className="label" htmlFor="sensor-ph-calibrated">Дата последней калибровки pH-электродов</label>
+              <input id="sensor-ph-calibrated" name="sensor_ph_calibrated" type="date" className="w-full input" value={safePassport.data["Дата последней калибровки pH-электродов"] || ""} onChange={(e) => setDataKey("Дата последней калибровки pH-электродов", e.target.value)} />
+            </div>
+
+            <div className="row">
+              <label className="label" htmlFor="sensor-coords">Местоположение точки (координаты участка)</label>
+              <input id="sensor-coords" name="sensor_coords" className="w-full input" value={safePassport.data["Местоположение точки ( координаты участка)"] || ""} onChange={(e) => setDataKey("Местоположение точки ( координаты участка)", e.target.value)} placeholder="lat,lon" />
+            </div>
+
+            <div className="row">
+              <label className="label" htmlFor="sensor-gateway-photo">Фото площадки от шлюза (ссылка / описание)</label>
+              <input id="sensor-gateway-photo" name="sensor_gateway_photo" className="w-full input" value={safePassport.data["Фото площадки от шлюза"] || ""} onChange={(e) => setDataKey("Фото площадки от шлюза", e.target.value)} />
+            </div>
+
+            <div className="row">
+              <label className="label" htmlFor="sensor-alerts">Последние значимые алерты</label>
+              <input id="sensor-alerts" name="sensor_alerts" className="w-full input" value={safePassport.data["Последние значимые алерты"] || ""} onChange={(e) => setDataKey("Последние значимые алерты", e.target.value)} />
+            </div>
+
+            <div className="row">
+              <label className="label" htmlFor="sensor-recommendation">Краткая рекомендация от ИИ</label>
+              <input id="sensor-recommendation" name="sensor_recommendation" className="w-full input" value={safePassport.data["Краткая рекомендация от ИИ"] || ""} onChange={(e) => setDataKey("Краткая рекомендация от ИИ", e.target.value)} />
+            </div>
+          </div>
         )}
       </div>
-      
-      <div style={{ marginTop: 15 }}>
-        <h5>Дополнительные данные</h5>
-        <div className="small" style={{ color: "#666", marginBottom: 8 }}>
-          Дополнительные параметры, которые могут быть полезны для потребителей
+
+      {/* Секция пользовательских параметров */}
+      <div className="mt-4">
+        <h6 className="text-sm font-medium mb-2">Дополнительные параметры (пользовательские)</h6>
+
+        <div className="space-y-2">
+          {Object.entries(safePassport.data || {})
+            .filter(([k]) => !RESERVED_SENSOR_KEYS.includes(k))
+            .map(([k, v], idx) => (
+              <div key={k} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <input id={`custom-key-${idx}`} className="w-1-3 input" name={`custom_key_${idx}`} value={k} readOnly aria-readonly />
+                <input id={`custom-val-${idx}`} className="flex-1 input" name={`custom_val_${idx}`} value={v} onChange={(e) => setDataKey(k, e.target.value)} />
+                <button type="button" className="text-red-600" onClick={() => removeDataKey(k)}>✕</button>
+              </div>
+            ))
+          }
         </div>
-        
-        {Object.entries(passportData.data).map(([key, value], index) => (
-          <div key={index} className="row" style={{ marginBottom: 5 }}>
-            <input
-              className="input"
-              style={{ width: "30%" }}
-              value={key}
-              onChange={(e) => {
-                const newData = { ...passportData.data };
-                const oldValue = newData[key];
-                delete newData[key];
-                newData[e.target.value] = oldValue;
-                setPassportData({ ...passportData, data: newData });
-              }}
-              placeholder="Параметр"
-            />
-            <input
-              className="input"
-              style={{ width: "65%" }}
-              value={value}
-              onChange={(e) => {
-                const newData = { ...passportData.data };
-                newData[key] = e.target.value;
-                setPassportData({ ...passportData, data: newData });
-              }}
-              placeholder="Значение"
-            />
-            <button
-              className="btn"
-              type="button"
-              onClick={() => {
-                const newData = { ...passportData.data };
-                delete newData[key];
-                setPassportData({ ...passportData, data: newData });
-              }}
-              style={{ width: "5%", padding: "0 5px" }}
-            >
-              ✕
-            </button>
-          </div>
-        ))}
-        
-        <div className="row" style={{ marginTop: 8 }}>
-          <button
-            className="btn"
-            type="button"
-            onClick={() => {
-              setPassportData({
-                ...passportData,
-                data: { ...passportData.data, "": "" }
-              });
-            }}
-            style={{ fontSize: 12 }}
-          >
-            + Добавить параметр
-          </button>
+
+        <div className="mt-3" style={{ display: "flex", gap: 8 }}>
+          <input id="new-param-key" name="new_param_key" className="flex-1 input" placeholder="Название параметра" value={customKey} onChange={(e) => setCustomKey(e.target.value)} />
+          <input id="new-param-value" name="new_param_value" className="flex-1 input" placeholder="Значение" value={customValue} onChange={(e) => setCustomValue(e.target.value)} />
+          <button type="button" className="btn" onClick={addCustomParam}>Добавить</button>
         </div>
       </div>
     </div>
   );
-};
+}
 
-export default function ProductForm({ initial = null, user, onDone, setMsg }) {
+
+export default function ProductForm({ initial = null, user = null, onDone = null, onCancel = null, setMsg = null }) {
+  // Состояния формы
   const [name, setName] = useState(initial?.name || "");
   const [shortDescription, setShortDescription] = useState(initial?.short_description || "");
   const [farmId, setFarmId] = useState(initial?.farm_id || "");
   const [farms, setFarms] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [file, setFile] = useState(null);
-  const [passportData, setPassportData] = useState({
-    origin: "",
-    variety: "",
-    harvest_date: "",
-    certifications: [],
-    data: {}
-  });
+  const [loading, setLoading] = useState(false);
+  // Состояние паспорта
+  const [passport, setPassport] = useState(initial?.passport ? {
+    origin: initial.passport.origin || "",
+    variety: initial.passport.variety || "",
+    harvest_date: initial.passport.harvest_date ? initial.passport.harvest_date.split("T")[0] : "",
+    certifications: Array.isArray(initial.passport.certifications) ? initial.passport.certifications.map(c => ({ ...c })) : [],
+    data: { ...(initial.passport.data || {}) }
+  } : { origin: "", variety: "", harvest_date: "", certifications: [], data: {} });
   const [passportSaving, setPassportSaving] = useState(false);
 
+  // Загрузка ферм при монтировании компонента
   useEffect(() => {
     async function loadFarms() {
       try {
-        const r = await apiGetFarms();
+        const r = await getFarms();
         if (r && r.ok) {
           let list = r.data || [];
-          if (user?.role === "farmer") list = list.filter((f) => f.owner_id === user.id);
+          if (user?.role === "farmer") list = list.filter(f => f.owner_id === user.id);
           setFarms(list);
-        } else {
-          setFarms([]);
-        }
-      } catch (err) {
-        console.error("loadFarms err", err);
+        } else setFarms([]);
+      } catch (e) {
+        console.error("getFarms error", e);
         setFarms([]);
       }
     }
     loadFarms();
   }, [user]);
 
-  // Заполняем паспорт при редактировании существующего продукта
+  // Если initial меняется (например, редактирование другого товара), обновим локальный стейт passport
   useEffect(() => {
-    if (initial && initial.passport) {
-      setPassportData({
+    if (initial?.passport) {
+      setPassport({
         origin: initial.passport.origin || "",
         variety: initial.passport.variety || "",
-        harvest_date: initial.passport.harvest_date ? 
-          new Date(initial.passport.harvest_date).toISOString().split('T')[0] : "",
-        certifications: [...initial.passport.certifications] || [],
-        data: { ...initial.passport.data } || {}
+        harvest_date: initial.passport.harvest_date ? initial.passport.harvest_date.split("T")[0] : "",
+        certifications: Array.isArray(initial.passport.certifications) ? initial.passport.certifications.map(c => ({ ...c })) : [],
+        data: { ...(initial.passport.data || {}) }
       });
     }
   }, [initial]);
 
-  async function savePassport(productId) {
+  // Сохранение паспорта в API
+  async function savePassportToAPI(productId) {
     setPassportSaving(true);
     try {
-      // Форматируем данные паспорта
       const payload = {
-        origin: passportData.origin || null,
-        variety: passportData.variety || null,
-        harvest_date: passportData.harvest_date ? new Date(passportData.harvest_date) : null,
-        certifications: passportData.certifications,
-        data: passportData.data
+        origin: passport.origin || null,
+        variety: passport.variety || null,
+        harvest_date: passport.harvest_date || null,
+        certifications: passport.certifications || [],
+        data: passport.data || {}
       };
-      
-      const response = await upsertPassport(productId, payload);
-      
-      if (response.ok) {
-        return true;
-      } else {
-        const error = response.data?.detail || "Ошибка сохранения паспорта";
-        throw new Error(error);
-      }
-    } catch (error) {
-      console.error("Error saving passport:", error);
-      throw error;
+      const res = await upsertPassport(productId, payload);
+      if (!res || !res.ok) throw new Error(res?.data?.detail || "Ошибка сохранения паспорта");
+      return true;
     } finally {
       setPassportSaving(false);
     }
   }
 
-  async function submit(e) {
+  // Обработка отправки формы
+  async function handleSubmit(e) {
     e.preventDefault();
     setMsg && setMsg(null);
     setLoading(true);
-    
+
     try {
       const payload = { name, short_description: shortDescription, farm_id: farmId || null };
-      let createdProduct = null;
-      
+      let resultProduct = null;
+
       if (initial && initial.id) {
-        const r = await updateProduct(initial.id, payload);
-        if (!r || !r.ok) {
-          const errtext = (r && r.data && (r.data.detail || JSON.stringify(r.data))) || `Ошибка обновления: ${r?.status}`;
-          throw new Error(errtext);
-        }
-        createdProduct = r.data;
+        const res = await updateProduct(initial.id, payload);
+        if (!res || !res.ok) throw new Error(res?.data?.detail || "Ошибка обновления товара");
+        resultProduct = res.data;
       } else {
-        const newProd = await createProduct(payload);
-        if (!newProd || !newProd.id) throw new Error("Создание продукта вернуло неверный ответ");
-        createdProduct = newProd;
+        const res = await createProduct(payload);
+        if (!res || !res.ok || !res.data?.id) throw new Error(res?.data?.detail || "Ошибка создания товара");
+        resultProduct = res.data;
       }
-      
-      // Сохраняем паспорт
-      await savePassport(createdProduct.id);
-      
-      // Загружаем изображение, если есть
+
+      // Сохранение паспорта
+      await savePassportToAPI(resultProduct.id);
+
+      // Загрузка медиа файла, если он предоставлен
       if (file) {
         try {
-          const upRes = await uploadProductMedia(createdProduct.id, file, true);
-          if (upRes && upRes.ok === false) {
-            throw new Error((upRes.data && upRes.data.detail) || "Ошибка загрузки изображения");
-          }
-        } catch (errFile) {
-          console.warn("Ошибка при загрузке медиа:", errFile);
-          setMsg && setMsg("Продукт создан, но не удалось загрузить изображение: " + errFile.message);
+          const up = await uploadProductMediaDirect(resultProduct.id, file, true);
+          if (!up || up.ok === false) throw new Error(up?.data?.detail || "Ошибка загрузки файла");
+          const objectKey = up.data?.object_key;
+          const confirm = await confirmMediaUpload(resultProduct.id, { object_key: objectKey, is_primary: true, mime_type: file.type, meta: {} });
+          if (!confirm || !confirm.ok) throw new Error(confirm?.data?.detail || "Ошибка подтверждения медиа");
+        } catch (err) {
+          console.warn("media upload error", err);
+          setMsg && setMsg("Товар создан, но не удалось загрузить фото: " + (err.message || err));
           setLoading(false);
-          onDone && onDone(createdProduct);
+          onDone && onDone(resultProduct);
           return;
         }
       }
-      
-      setMsg && setMsg(initial ? "Товар и паспорт обновлены" : "Товар и паспорт созданы");
-      onDone && onDone(createdProduct);
+
+      setMsg && setMsg(initial ? "Товар обновлён" : "Товар создан");
+      onDone && onDone(resultProduct);
     } catch (err) {
       console.error(err);
-      const text = (err && err.message) || String(err);
-      setMsg && setMsg(text);
+      setMsg && setMsg(err.message || String(err));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form className="form" onSubmit={submit}>
-      <h3>{initial ? "Редактировать товар" : "Создать товар"}</h3>
-      
-      <div className="row">
-        <label className="small">Название</label>
-        <input
-          className="input"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          placeholder="Название товара"
-        />
+    <form className="p-4 bg-gray-50 rounded" onSubmit={handleSubmit} noValidate>
+      <h2 className="text-xl font-semibold mb-4">{initial ? "Редактировать товар" : "Создать товар"}</h2>
+
+      {/* Поле названия */}
+      <div className="mb-3 row">
+        <label className="label" htmlFor="product-name">Название</label>
+        <input id="product-name" name="product_name" className="w-full input" value={name} onChange={(e) => setName(e.target.value)} required placeholder="" />
       </div>
-      
-      <div className="row">
-        <label className="small">Короткое описание</label>
-        <input
-          className="input"
-          value={shortDescription}
-          onChange={(e) => setShortDescription(e.target.value)}
-          placeholder="Краткое описание (опционально)"
-        />
+
+      {/* Поле короткого описания */}
+      <div className="mb-3 row">
+        <label className="label" htmlFor="product-short">Короткое описание</label>
+        <input id="product-short" name="product_short_description" className="w-full input" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} placeholder="" />
       </div>
-      
-      <div className="row">
-        <label className="small">Ферма</label>
-        <select
-          className="input"
-          value={farmId ?? ""}
-          required
-          onChange={(e) => setFarmId(e.target.value ? parseInt(e.target.value, 10) : "")}
-        >
-          <option value="">— выберите ферму —</option>
-          {farms.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.name || `Ферма ${f.id}`}
-            </option>
-          ))}
+
+      {/* Поле выбора фермы */}
+      <div className="mb-3 row">
+        <label className="label" htmlFor="product-farm">Ферма</label>
+        <select id="product-farm" name="product_farm_id" className="w-full input" value={farmId ?? ""} onChange={(e) => setFarmId(e.target.value)}>
+          <option value="">— Выберите ферму —</option>
+          {farms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
         </select>
       </div>
-      
-      <div className="row">
-        <label className="small">Фото (опционально)</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
-        />
+
+      {/* Поле загрузки фото */}
+      <div className="mb-3 row">
+        <label className="label" htmlFor="product-photo">Фото (опционально)</label>
+        <input id="product-photo" name="product_photo" type="file" className="input" onChange={e => setFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)} accept="image/*" />
       </div>
-      
-      <ProductPassportForm 
-        initialPassport={initial?.passport} 
-        onChange={setPassportData} 
-      />
-      
-      <div className="row" style={{ marginTop: 12 }}>
-        <button className="btn" type="submit" disabled={loading || passportSaving}>
-          {loading ? "Сохранение..." : initial ? "Сохранить" : "Создать"}
-        </button>
+
+      {/* Передаём passport как контролируемый prop и onChange — избегаем двойной синхронизации */}
+      <ProductPassportForm passport={passport} onChange={(p) => setPassport(p)} />
+
+      {/* Кнопки формы */}
+      <div className="mt-4 row">
+        <button className="btn" type="submit" disabled={loading || passportSaving}>{loading ? "Сохранение..." : (initial ? "Сохранить" : "Создать")}</button>
+        {onCancel && <button type="button" className="btn" style={{ marginLeft: 8 }} onClick={onCancel}>Отмена</button>}
       </div>
     </form>
   );

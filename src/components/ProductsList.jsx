@@ -1,12 +1,14 @@
 // src/components/ProductsList.jsx
 import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
-import { getProducts, getMyProducts } from "../api";
+import { getProducts, getMyProducts } from "../api"; 
 
 export default function ProductsList({ q, user, onOpen, onEdit, onDelete, my=false }) {
+  // Состояния списка продуктов
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Загрузка списка продуктов
   async function load() {
     setLoading(true);
     try {
@@ -17,6 +19,7 @@ export default function ProductsList({ q, user, onOpen, onEdit, onDelete, my=fal
     finally { setLoading(false); }
   }
 
+  // Загрузка при изменении поискового запроса
   useEffect(() => { load(); }, [q]);
 
   return (

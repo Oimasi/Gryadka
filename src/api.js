@@ -1,5 +1,9 @@
 // src/api.js
+// Универсальный клиент для фронтенда: fetchWithAuth + API helpers + image fetch fallback.
+
+// Базовый URL API
 const API_ROOT = "/api";
+// Объект с конечными точками API
 export const ENDPOINTS = {
   LOGIN: `${API_ROOT}/auth/login`,
   REGISTER: `${API_ROOT}/auth/register`,
@@ -7,235 +11,233 @@ export const ENDPOINTS = {
   LOGOUT: `${API_ROOT}/auth/logout`,
   PRODUCTS: `${API_ROOT}/products`,
   FARMS: `${API_ROOT}/farms`,
-  ME: `${API_ROOT}/users/me`
+  ME: `${API_ROOT}/users/me`,
 };
 
+// Ключ для хранения токена доступа в localStorage
 const ACCESS_TOKEN_KEY = "gryadka_access_token";
 
+// Сохранение токена доступа в localStorage
 export function saveAccessToken(token) {
   if (token) localStorage.setItem(ACCESS_TOKEN_KEY, token);
   else localStorage.removeItem(ACCESS_TOKEN_KEY);
 }
+// Чтение токена доступа из localStorage
 export function readAccessToken() {
   return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
-export async function upsertPassport(productId, payload) {
-  const res = await fetchWithAuth(`${ENDPOINTS.PRODUCTS}/${productId}/passport`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  const j = await res.json().catch(()=>null);
-  return { ok: res.ok, status: res.status, data: j };
-}
-export async function getPassport(productId) {
-  const res = await fetchWithAuth(`${ENDPOINTS.PRODUCTS}/${productId}/passport`, { method: "GET" });
-  const j = await res.json().catch(()=>null);
-  return { ok: res.ok, status: res.status, data: j };
-}
 /**
- * fetchWithAuth - wrapper that attaches Bearer token and tries refresh once on 401
- * init may include headers, body, method, etc.
+ * fetchWithAuth:
+ * - добавляет Authorization: Bearer <token> (если есть) и credentials: 'include'
+ * - при получении 401 пытается один раз сделать refresh (POST /auth/refresh, credentials: include)
+ *   и повторить запрос с новым access_token (если refresh вернул новый access_token).
+ *
+ * Возвращает Response (как fetch).
  */
 export async function fetchWithAuth(url, init = {}, allowRetry = true) {
-  const token = readAccessToken(); // предполагается, что у вас есть такая функция
+  const token = readAccessToken();
   const headers = new Headers(init.headers || {});
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  // гарантируем credentials: 'include' (если используете cookie refresh)
+
   const cfg = { ...init, credentials: "include", headers };
 
   let res;
   try {
     res = await fetch(url, cfg);
   } catch (err) {
-    // сетевые ошибки пробрасываем дальше
     throw err;
   }
 
-  // при 401 пробуем refresh (один раз)
   if (res.status === 401 && allowRetry) {
+    // Попытка обновления токена через cookie (httponly refresh)
     try {
-      const r = await fetch(ENDPOINTS.REFRESH, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({})
-      });
+      const r = await fetch(ENDPOINTS.REFRESH, { method: "POST", credentials: "include" });
       if (r.ok) {
         const j = await r.json().catch(() => null);
-        if (j && j.access_token) {
-          saveAccessToken(j.access_token); // предполагается такая функция
-          headers.set("Authorization", `Bearer ${j.access_token}`);
-          const cfg2 = { ...cfg, headers };
-          res = await fetch(url, cfg2);
-        } else {
-          // refresh не дал токен — очищаем локальное хранилище
-          saveAccessToken(null);
+        const newToken = j && j.access_token;
+        if (newToken) {
+          saveAccessToken(newToken);
+          // повторим исходный запрос с новым токеном, но без дальнейших попыток
+          const headers2 = new Headers(init.headers || {});
+          headers2.set("Authorization", `Bearer ${newToken}`);
+          const cfg2 = { ...init, credentials: "include", headers: headers2 };
+          return fetch(url, cfg2);
         }
       } else {
+        // refresh провалился — очистим access token
         saveAccessToken(null);
       }
     } catch (e) {
-      // refresh упал — ничего не делаем, вернём первоначальный 401
+      // игнорируем ошибки сети при обновлении токена — вернём первоначальный 401
     }
   }
 
   return res;
 }
 
-/* ---------- Auth ---------- */
-export async function login({ email, password }) {
+/**
+ * Вспомогательная функция: выполнение JSON-запроса с аутентификацией (возвращает { ok, status, data })
+ */
+async function _fetchJson(url, init = {}) {
+  const res = await fetchWithAuth(url, init);
+  const j = await res.json().catch(() => null);
+  return { ok: res.ok, status: res.status, data: j };
+}
+
+/* ---------- auth ---------- */
+// Логин пользователя
+export async function login(payload) {
+  // payload: { email, password }
   const res = await fetch(ENDPOINTS.LOGIN, {
     method: "POST",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify(payload),
+    credentials: "include"
   });
-  const j = await res.json().catch(()=>null);
+  const j = await res.json().catch(() => null);
+  // ожидаем { access_token: "..." } и httponly refresh cookie
+  if (res.ok && j && j.access_token) {
+    saveAccessToken(j.access_token);
+  }
   return { ok: res.ok, status: res.status, data: j };
 }
 
-export async function register({ email, password, first_name, last_name, role }) {
+// Регистрация пользователя
+export async function register(payload) {
   const res = await fetch(ENDPOINTS.REGISTER, {
     method: "POST",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, first_name, last_name, role })
+    body: JSON.stringify(payload),
+    credentials: "include"
   });
-  const j = await res.json().catch(()=>null);
+  const j = await res.json().catch(() => null);
   return { ok: res.ok, status: res.status, data: j };
 }
 
+// Выход пользователя
 export async function logout() {
+  // вызов logout, ожидаем что бэкенд почистит refresh cookie
   try {
-    await fetch(ENDPOINTS.LOGOUT, { method: "POST", credentials: "include" });
-  } catch (e) {}
-  saveAccessToken(null);
-}
-
-/* ---------- User ---------- */
-export async function getMe() {
-  const res = await fetchWithAuth(ENDPOINTS.ME, { method: "GET" });
-  const j = await res.json().catch(()=>null);
-  return { ok: res.ok, status: res.status, data: j };
-}
-
-/* ---------- Products ---------- */
-export async function getProducts({ q=null, limit=50, offset=0 } = {}) {
-  const url = new URL(ENDPOINTS.PRODUCTS, window.location.origin);
-  if (q) url.searchParams.set("q", q);
-  url.searchParams.set("limit", limit);
-  url.searchParams.set("offset", offset);
-  const res = await fetch(url.toString(), { credentials: "include" });
-  const j = await res.json().catch(()=>null);
-  return { ok: res.ok, status: res.status, data: j };
-}
-
-export async function getProduct(id) {
-  const res = await fetch(`${ENDPOINTS.PRODUCTS}/${id}`, { credentials: "include" });
-  const j = await res.json().catch(()=>null);
-  return { ok: res.ok, status: res.status, data: j };
-}
-
-export async function createProduct(payload) {
-  const res = await fetchWithAuth(`${ENDPOINTS.PRODUCTS}/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`Create product failed: ${res.status} ${text}`);
+    const res = await fetch(ENDPOINTS.LOGOUT, { method: "POST", credentials: "include" });
+    saveAccessToken(null);
+    return { ok: res.ok, status: res.status };
+  } catch (e) {
+    saveAccessToken(null);
+    return { ok: false, status: 0 };
   }
-  return res.json();
 }
 
+// Получение данных текущего пользователя
+export async function getMe() {
+  return _fetchJson(ENDPOINTS.ME, { method: "GET" });
+}
+
+/* ---------- products ---------- */
+// Получение списка продуктов
+export async function getProducts({ q = "", limit = 50, offset = 0 } = {}) {
+  const params = new URLSearchParams();
+  params.set("limit", String(limit));
+  params.set("offset", String(offset));
+  if (q) params.set("q", q);
+  const url = `${ENDPOINTS.PRODUCTS}?${params.toString()}`;
+  return _fetchJson(url, { method: "GET" });
+}
+
+// Получение списка продуктов текущего пользователя
+export async function getMyProducts() {
+  return _fetchJson(`${ENDPOINTS.PRODUCTS}/me`, { method: "GET" });
+}
+
+// Получение продукта по ID
+export async function getProduct(id) {
+  return _fetchJson(`${ENDPOINTS.PRODUCTS}/${id}`, { method: "GET" });
+}
+
+// Создание продукта
+export async function createProduct(payload) {
+  return _fetchJson(`${ENDPOINTS.PRODUCTS}/`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+}
+
+// Обновление продукта
 export async function updateProduct(id, payload) {
-  // payload partial
-  const res = await fetchWithAuth(`${ENDPOINTS.PRODUCTS}/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  const j = await res.json().catch(()=>null);
-  return { ok: res.ok, status: res.status, data: j };
+  return _fetchJson(`${ENDPOINTS.PRODUCTS}/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
 }
 
+// Удаление продукта
 export async function deleteProduct(id) {
   const res = await fetchWithAuth(`${ENDPOINTS.PRODUCTS}/${id}`, { method: "DELETE" });
   return { ok: res.ok, status: res.status };
 }
 
-/* Media upload/delete - optional, depends on backend */
-export async function uploadProductMedia(productId, file, is_primary=false) {
-  // 1) presign
-  const presignRes = await fetchWithAuth(`${ENDPOINTS.PRODUCTS}/${productId}/media/presign`, {
+/* ---------- media ---------- */
+// Подтверждение загрузки медиа
+export async function confirmMediaUpload(productId, payload) {
+  return _fetchJson(`${ENDPOINTS.PRODUCTS}/${productId}/media/confirm`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ filename: file.name })
+    body: JSON.stringify(payload)
   });
-  const presignJson = await presignRes.json().catch(()=>null);
-  if (!presignRes.ok) return { ok: false, status: presignRes.status, data: presignJson };
-
-  const { upload_url: uploadUrl, object_key: objectKey } = presignJson;
-  if (!uploadUrl || !objectKey) return { ok: false, status: 500, data: { detail: "No upload url" } };
-
-  // 2) PUT directly to MinIO (uploadUrl is presigned)
-  try {
-    const putRes = await fetch(uploadUrl, {
-      method: "PUT",
-      body: file,
-      headers: { "Content-Type": file.type || "application/octet-stream" }
-    });
-    if (!putRes.ok) {
-      return { ok: false, status: putRes.status, data: { detail: "Upload to storage failed" } };
-    }
-  } catch (e) {
-    return { ok: false, status: 0, data: { detail: "Network error on uploading to storage" } };
-  }
-
-  // 3) confirm to API
-  const confirmRes = await fetchWithAuth(`${ENDPOINTS.PRODUCTS}/${productId}/media/confirm`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ object_key: objectKey, mime_type: file.type || "image/jpeg", is_primary })
-  });
-  const confirmJson = await confirmRes.json().catch(()=>null);
-  return { ok: confirmRes.ok, status: confirmRes.status, data: confirmJson };
 }
 
+// Прямая загрузка медиа для продукта
+export async function uploadProductMediaDirect(productId, file, is_primary = false) {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (is_primary) formData.append("is_primary", "1");
+  
+  const res = await fetchWithAuth(`${ENDPOINTS.PRODUCTS}/${productId}/media/upload`, { 
+    method: "PUT", 
+    body: formData 
+  });
+  
+  const j = await res.json().catch(() => null);
+  return { ok: res.ok, status: res.status, data: j };
+}
+
+// Удаление медиа продукта
 export async function deleteProductMedia(productId, mediaId) {
   const res = await fetchWithAuth(`${ENDPOINTS.PRODUCTS}/${productId}/media/${mediaId}`, { method: "DELETE" });
   return { ok: res.ok, status: res.status };
 }
 
-/* ---------- Farms ---------- */
+/**
+ * Попытка загрузки изображения с авторизацией и возврат objectURL.
+ * - возвращает строку objectURL при успехе
+ * - возвращает null при любой ошибке (403/401/other)
+ *
+ * Вызывающий должен вызвать URL.revokeObjectURL, когда objectURL больше не нужен.
+ */
+export async function fetchImageAsObjectURL(url) {
+  try {
+    const token = readAccessToken();
+    const headers = new Headers();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    // credentials: include для разрешения сессий на основе cookie / обновления cookie при необходимости
+    const res = await fetch(url, { method: "GET", credentials: "include", headers });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  } catch (e) {
+    return null;
+  }
+}
+
+/* ---------- farms & passport helpers ---------- */
+// Получение ферм
 export async function getFarms() {
-  const res = await fetch(FARMS_ENDPOINT(), { credentials: "include" });
-  const j = await res.json().catch(()=>null);
-  return { ok: res.ok, status: res.status, data: j };
+  return _fetchJson(ENDPOINTS.FARMS, { method: "GET" });
 }
-
-export function FARMS_ENDPOINT() {
-  return ENDPOINTS.FARMS;
-}
-
-export async function getMyProducts() {
-  const res = await fetchWithAuth(`${ENDPOINTS.PRODUCTS}/me`, { method: "GET" });
-  const j = await res.json().catch(()=>null);
-  return { ok: res.ok, status: res.status, data: j };
-}
-
-
+// Создание фермы
 export async function createFarm(payload) {
-  // payload: { name, description, owner_id? }
-  const res = await fetchWithAuth(ENDPOINTS.FARMS, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  const j = await res.json().catch(()=>null);
-  return { ok: res.ok, status: res.status, data: j };
+  return _fetchJson(ENDPOINTS.FARMS, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+}
+
+// Создание/обновление паспорта продукта
+export async function upsertPassport(productId, payload) {
+  return _fetchJson(`${ENDPOINTS.PRODUCTS}/${productId}/passport`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+}
+// Получение паспорта продукта
+export async function getPassport(productId) {
+  return _fetchJson(`${ENDPOINTS.PRODUCTS}/${productId}/passport`, { method: "GET" });
 }

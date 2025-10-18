@@ -1,34 +1,232 @@
-/* src/styles.css */
+/* src/styles.css
+   Унифицированная тема: специальные классы для nav, search-row, product-actions,
+   улучшенная контрастность меток, и адаптивность для мобильных.
+*/
+
+/* Определение CSS переменных для темы */
+:root {
+  --bg: #f7f8fa;                /* Цвет фона */
+  --surface: #ffffff;           /* Цвет поверхности карточек и форм */
+  --text: #0f172a;             /* Основной цвет текста */
+  --muted: #6b7280;            /* Цвет второстепенного текста */
+  --accent: #0b5cff;           /* Акцентный цвет */
+  --card-border: rgba(15,23,42,0.06); /* Цвет границ карточек */
+  --radius: 10px;              /* Радиус скругления */
+}
+
+/* Сброс стилей и базовая настройка */
 * { box-sizing: border-box; }
-body { margin: 0; font-family: Inter, Roboto, Arial, sans-serif; background: #fbfbfb; color: #222; }
-.app { max-width: 1000px; margin: 18px auto; padding: 12px; }
+html,body,#root { height: 100%; }
+body {
+  margin: 0;
+  font-family: Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+}
 
-.nav { display:flex; gap:8px; margin-bottom:12px; align-items:center; flex-wrap:wrap; }
-.btn { padding:6px 10px; border-radius:8px; border:1px solid #dcdcdc; background: #fff; cursor:pointer; }
-.btn:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-.form { border:1px solid #eee; padding:12px; border-radius:8px; margin:10px 0; background:#fff; }
-.row { display:flex; gap:8px; align-items:center; margin:8px 0; }
-.input { padding:8px; border-radius:6px; border:1px solid #ddd; width:100%; font-size:14px; }
-.card { border:1px solid #e6e6e6; padding:10px; border-radius:8px; margin:10px 0; background:white; }
-.small { font-size:0.9em; color:#666; }
-.msg { padding:10px; margin:10px 0; border-radius:8px; }
-.msg.success { background:#eafaf0; border:1px solid #56b26f; color:#104a28; }
-.msg.error { background:#fff0f0; border:1px solid #d9534f; color:#4b0b0b; }
+/* Контейнер приложения */
+.app {
+  max-width: 1100px;
+  margin: 18px auto;
+  padding: 16px;
+}
 
-/* images */
+/* Стили для навигационной панели */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.03);
+  flex-wrap: wrap;
+}
+.nav-left, .nav-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.nav-spacer { flex: 1 1 auto; min-width: 8px; }
+
+/* Стили для кнопок */
+.btn {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15,23,42,0.06);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(2,6,23,0.06); }
+.btn.primary, .bg-blue-600 { background: linear-gradient(180deg,#2563eb,#1e40af); color: #fff; border: none; }
+
+/* Вспомогательные классы */
+.small { font-size: 0.92rem; color: var(--muted); }
+.nav-greeting { margin-right: 6px; }
+
+/* Стили для строки поиска */
+.search-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.search-row .input { flex: 1 1 auto; min-width: 0; }
+.search-btn { white-space: nowrap; }
+
+/* Стили для полей ввода */
+.input, input[type="text"], input[type="email"], input[type="password"], select, textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15,23,42,0.08);
+  background: #fff;
+  font-size: 15px;
+  color: var(--text);
+}
+.input[readonly], .input[disabled] { background: #fafafa; opacity: 0.95; }
+
+/* Стили для меток */
+.label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #374151; /* более темный цвет метки для контраста */
+  font-weight: 600;
+}
+
+/* Стили для карточек и форм */
+.card {
+  border: 1px solid var(--card-border);
+  padding: 14px;
+  border-radius: 12px;
+  margin: 12px 0;
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.03);
+}
+.form {
+  border: 1px solid rgba(15,23,42,0.04);
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff;
+}
+
+/* Стили для изображения продукта */
 .product-img {
   width: 100%;
   max-width: 160px;
   max-height: 160px;
   height: auto;
-  object-fit: cover; /* сохраняет пропорции и не ломает вёрстку */
+  object-fit: cover;
   border-radius: 8px;
   display:block;
 }
 
-/* responsive */
-@media (max-width: 640px) {
-  .nav { gap:6px; }
-  .product-img { max-width: 120px; max-height: 120px; }
-  .app { padding: 8px; }
+/* Обрезка короткого описания до 3 строк */
+.short-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35em;
+  max-height: calc(1.35em * 3);
 }
+
+/* Стили для блока с кнопками действий над продуктом */
+.product-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.action-btn { padding: 8px 10px; }
+
+/* Адаптивная сетка для сенсоров */
+.responsive-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 720px) {
+  .responsive-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Отступы в области сенсора */
+.sensor-area > div { margin-bottom: 6px; }
+
+/* Вспомогательные утилиты */
+.p-4 { padding: 16px !important; }
+.flex { display:flex !important; }
+.mb-3 { margin-bottom: 12px !important; }
+
+/* Стили для сообщений */
+.msg { padding: 10px; border-radius: 8px; margin: 10px 0; }
+.msg.success { background: #eafaf0; border: 1px solid #56b26f; color: #064e3b; }
+.msg.error { background: #fff0f0; border: 1px solid #d9534f; color: #4b0b0b; }
+
+/* Адаптивные стили для мобильных устройств */
+@media (max-width: 640px) {
+  .nav { padding: 8px; gap: 6px; }
+  .nav-btn { padding: 7px 9px; font-size: 14px; }
+  .app { padding: 10px; }
+  .product-img { max-width: 140px; max-height: 140px; }
+  .product-actions { flex-direction: column; align-items: stretch; }
+  .search-row { gap: 6px; }
+  .search-btn { padding: 8px 10px; }
+}
+
+/* Стили для фокуса элементов */
+:focus { outline: none; }
+.btn:focus, .input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 4px rgba(11,92,255,0.12);
+  border-color: var(--accent);
+}
+
+/* Удобные отступы между полями */
+.row { margin-bottom: 12px; }
+
+/* Макет деталей продукта */
+.product-details-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: stretch;
+}
+
+/* Основной контент и боковая панель */
+.product-details-main { order: 0; }
+.product-details-aside { order: 1; }
+
+/* На десктопе показываем изображение выше описания */
+@media (min-width: 900px) {
+  .product-details-grid { flex-direction: column; }
+  .product-details-aside { order: -1; align-self: center; max-width: 760px; width: 100%; }
+  .product-details-main { order: 0; }
+}
+
+/* Ограничение размера изображения продукта */
+.product-side-image { display:flex; justify-content:center; align-items:center; }
+.product-side-img {
+  max-width: 640px;
+  width: auto;
+  max-height: 420px;
+  height: auto;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+
+/* Отступ между блоками в деталях продукта */
+.product-details-aside + .product-details-main,
+.product-details-main + .product-details-aside {
+  margin-top: 12px;
+}
+
+/* Стили для аватара */
+.avatar { display: inline-flex; align-items: center; gap: 8px; }
