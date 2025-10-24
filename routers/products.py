@@ -166,6 +166,8 @@ def create_product(payload: ProductCreate, current_user: UserModel = Depends(get
     product = Product(
         name=payload.name,
         short_description=getattr(payload, "short_description", "") or "",
+        price=payload.price,
+        category=payload.category,
         owner_id=current_user.id,
         farm_id=final_farm_id,
         is_active=bool(getattr(payload, "is_active", True))
@@ -178,7 +180,6 @@ def create_product(payload: ProductCreate, current_user: UserModel = Depends(get
         db.rollback()
         logger.exception("Failed to create product: %s", exc)
         raise HTTPException(status_code=500, detail="Database error on create")
-
     
     passport_payload = getattr(payload, "passport", None)
     if passport_payload is not None:

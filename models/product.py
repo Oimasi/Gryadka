@@ -6,7 +6,7 @@ SQLAlchemy модели для Product, ProductPassport и ProductMedia.
 Все поля документированы и снабжены ограничениями (где это применимо).
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, ForeignKey, Text, Boolean, DateTime, UniqueConstraint, Index
+from sqlalchemy import Column, Integer, String, ForeignKey, Text, Boolean, DateTime, UniqueConstraint, Index, Numeric
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship, foreign
 from database.database import Base
@@ -20,6 +20,9 @@ class Product(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(200), nullable=False, index=True)
     short_description = Column(String(500), nullable=False, default="")
+    price = Column(Numeric(10, 2), nullable=False, default=0)        # цена — numeric(10,2)
+    category = Column(String(100), nullable=False, index=True, default="uncategorized")  # категория
+
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     farm_id = Column(Integer, ForeignKey("farms.id", ondelete="SET NULL"), nullable=True, index=True)
 
