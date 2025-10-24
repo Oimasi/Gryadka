@@ -42,8 +42,6 @@ function CertificateItem({ cert, onChange, onRemove }) {
     </div>
   );
 }
-
-
 function ProductPassportForm({ passport = null, onChange }) {
   const safePassport = passport || { origin: "", variety: "", harvest_date: "", certifications: [], data: {} };
 
@@ -91,7 +89,7 @@ function ProductPassportForm({ passport = null, onChange }) {
 
   const enableSensorsDefaults = () => {
     const d = { ...(safePassport.data || {}) };
-    if (d["Есть датчики"]) return; 
+    if (d["Есть датчики"]) return;
     d["Есть датчики"] = true;
     d["Средний pH за время выращивания"] = d["Средний pH за время выращивания"] ?? "";
     d["% измерений pH вне допустимого диапазона"] = d["% измерений pH вне допустимого диапазона"] ?? "";
@@ -199,6 +197,7 @@ function ProductPassportForm({ passport = null, onChange }) {
             />
           </div>
         </div>
+
 
         {sensorsEnabled && (
           <div className="sensor-area">
