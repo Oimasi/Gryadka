@@ -110,16 +110,20 @@ function coordsToLink(s) {
   if (!lat || !lon) return null;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lat + "," + lon)}`;
 }
+function formatPrice(v) {
+  if (v === null || v === undefined || v === "") return "—";
+  const n = Number(v);
+  if (Number.isNaN(n)) return String(v);
+  return new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 2 }).format(n);
+}
 
 export default function ProductDetails({ productId, onClose, setMsg }) {
-  // Состояния компонента
   const [product, setProduct] = useState(null);
   const [passport, setPassport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [imgSrc, setImgSrc] = useState(null);
   const [loadingImg, setLoadingImg] = useState(false);
 
-  // Загрузка данных продукта и паспорта
   useEffect(() => {
     let cancelled = false;
     let objectUrl = null;
@@ -182,7 +186,6 @@ export default function ProductDetails({ productId, onClose, setMsg }) {
 
     if (productId) load();
 
-    // Очистка при размонтировании компонента
     return () => {
       cancelled = true;
       if (objectUrl) {
@@ -190,15 +193,13 @@ export default function ProductDetails({ productId, onClose, setMsg }) {
         objectUrl = null;
       }
     };
-    
+
   }, [productId]);
 
   if (loading) return <div style={styles.page}>Загрузка...</div>;
   if (!product) return <div style={styles.page}>Товар не найден</div>;
 
-  // Данные паспорта
   const data = passport?.data || {};
-  // Ключи датчиков
   const sensorKeys = new Set([
     "Есть датчики",
     "Средний pH за время выращивания",
@@ -221,24 +222,20 @@ export default function ProductDetails({ productId, onClose, setMsg }) {
 
   return (
     <div style={styles.page}>
-      {/* Заголовок */}
       <div style={styles.headerRow}>
         <div>
           <h1 style={styles.title}>{product.name}</h1>
-          <div style={styles.sub}>ID: {product.id} • Ферма: {product.farm_name || "—"}</div>
+          <div style={styles.sub}>
+            ID: {product.id} • Ферма: {product.farm_name || "—"} • <strong style={{ marginLeft: 6 }}>{formatPrice(product.price)}</strong>
+          </div>
         </div>
         <div>
           <button onClick={onClose} style={styles.closeBtn}>Закрыть</button>
         </div>
       </div>
 
-      {/* Верхний ряд: краткое описание (левая колонка) + маленькая плашка с фото (правая колонка) */}
       <div style={topRowStyle}>
-        {/* левая колонка: краткое описание (перенёс сюда из предыдущего main) */}
         <div style={descCardWrapperStyle}>
-          {/* Карточка описания теперь flex-column и height:100%:
-              - основной текст растягивается (flex:1),
-              - smallMetaRow прижимается к низу (marginTop: 'auto') */}
           <div style={{ ...styles.card, height: "100%", display: "flex", flexDirection: "column" }}>
             <h3 style={styles.sectionTitle}>Краткое описание</h3>
             <div style={{ color: "#444", lineHeight: 1.45, flex: "1 1 auto" }}>
@@ -263,7 +260,6 @@ export default function ProductDetails({ productId, onClose, setMsg }) {
           </div>
         </div>
 
-        {/* правая колонка: маленькая отдельная плашка с фото + местоположение + фото от шлюза */}
         <div style={photoCardWrapperStyle}>
           <div style={{ ...styles.card, ...photoContainerStyle }}>
             <div>
@@ -299,7 +295,6 @@ export default function ProductDetails({ productId, onClose, setMsg }) {
         </div>
       </div>
 
-      
       {data["Есть датчики"] && (
         <div style={{ ...styles.card, marginTop: 14 }}>
           <h3 style={styles.sectionTitle}>Данные с датчиков</h3>
@@ -361,7 +356,6 @@ export default function ProductDetails({ productId, onClose, setMsg }) {
         </div>
       )}
 
-      {/* Дополнительные параметры */}
       <div style={{ ...styles.card, marginTop: 14 }}>
         <h3 style={styles.sectionTitle}>Доп. параметры</h3>
         <div style={styles.extraList}>

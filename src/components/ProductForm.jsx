@@ -10,7 +10,7 @@ import {
 } from "../api";
 
 
-// Компонент для отдельного сертификата
+/* Компонент для отдельного сертификата */
 function CertificateItem({ cert, onChange, onRemove }) {
   const idBase = cert._uid ? `cert-${cert._uid}` : `cert-${Math.random().toString(36).slice(2, 9)}`;
   return (
@@ -42,13 +42,9 @@ function CertificateItem({ cert, onChange, onRemove }) {
     </div>
   );
 }
-
-
 function ProductPassportForm({ passport = null, onChange }) {
-  // защитный дефолт
   const safePassport = passport || { origin: "", variety: "", harvest_date: "", certifications: [], data: {} };
 
-  // Зарезервированные ключи для датчиков
   const RESERVED_SENSOR_KEYS = [
     "Есть датчики",
     "Средний pH за время выращивания",
@@ -79,14 +75,10 @@ function ProductPassportForm({ passport = null, onChange }) {
       const arr = (passport.certifications || []).map(c => c._uid ? c : { ...c, _uid: genUid() });
       onChange && onChange({ ...safePassport, certifications: arr });
     }
-    
-  }, []); // выполняется один раз при монтировании формы
+  }, []); // eslint-disable-line
 
-  // Установка значения поля паспорта
   const setField = (changes) => onChange && onChange({ ...safePassport, ...changes });
-  // Установка значения в data
   const setDataKey = (k, v) => onChange && onChange({ ...safePassport, data: { ...(safePassport.data || {}), [k]: v } });
-  // Удаление значения из data
   const removeDataKey = (k) => {
     if (RESERVED_SENSOR_KEYS.includes(k)) return;
     const d = { ...(safePassport.data || {}) };
@@ -95,11 +87,9 @@ function ProductPassportForm({ passport = null, onChange }) {
   };
 
   const sensorsEnabled = Boolean((safePassport.data || {})["Есть датчики"]);
-
-  // Включение датчиков с дефолтными значениями
   const enableSensorsDefaults = () => {
     const d = { ...(safePassport.data || {}) };
-    if (d["Есть датчики"]) return; 
+    if (d["Есть датчики"]) return;
     d["Есть датчики"] = true;
     d["Средний pH за время выращивания"] = d["Средний pH за время выращивания"] ?? "";
     d["% измерений pH вне допустимого диапазона"] = d["% измерений pH вне допустимого диапазона"] ?? "";
@@ -147,7 +137,7 @@ function ProductPassportForm({ passport = null, onChange }) {
   const [customKey, setCustomKey] = useState("");
   const [customValue, setCustomValue] = useState("");
   // Добавление пользовательского параметра
-  const addCustomParam = () => {
+    const addCustomParam = () => {
     if (!customKey) return;
     if (RESERVED_SENSOR_KEYS.includes(customKey)) {
       setCustomKey("");
@@ -164,25 +154,21 @@ function ProductPassportForm({ passport = null, onChange }) {
     <div className="mt-6">
       <h4 className="text-lg font-semibold mb-3">Паспорт товара</h4>
 
-      {/* Поле происхождения */}
       <div className="mb-3 row">
         <label className="label" htmlFor="passport-origin">Происхождение</label>
         <input id="passport-origin" name="passport_origin" className="w-full input" value={safePassport.origin || ""} onChange={(e) => setField({ origin: e.target.value })} placeholder="" />
       </div>
 
-      {/* Поле сорта/вида */}
       <div className="mb-3 row">
         <label className="label" htmlFor="passport-variety">Сорт / вид</label>
         <input id="passport-variety" name="passport_variety" className="w-full input" value={safePassport.variety || ""} onChange={(e) => setField({ variety: e.target.value })} placeholder="" />
       </div>
 
-      {/* Поле даты сбора урожая */}
       <div className="mb-4 row">
         <label className="label" htmlFor="passport-harvest">Дата сбора урожая</label>
         <input id="passport-harvest" name="passport_harvest_date" type="date" className="w-full input" value={safePassport.harvest_date || ""} onChange={(e) => setField({ harvest_date: e.target.value })} />
       </div>
 
-      {/* Секция сертификатов */}
       <div className="mb-4">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h5 className="font-medium">Сертификаты</h5>
@@ -217,9 +203,10 @@ function ProductPassportForm({ passport = null, onChange }) {
           </div>
         </div>
 
+
         {sensorsEnabled && (
           <div className="sensor-area">
-            {/* Поля для pH */}
+            
             <div className="responsive-grid">
               <div className="row">
                 <label className="label" htmlFor="sensor-avg-ph">Средний pH за время выращивания</label>
@@ -342,6 +329,7 @@ function ProductPassportForm({ passport = null, onChange }) {
 }
 
 
+
 export default function ProductForm({ initial = null, user = null, onDone = null, onCancel = null, setMsg = null }) {
   // Состояния формы
   const [name, setName] = useState(initial?.name || "");
@@ -350,6 +338,8 @@ export default function ProductForm({ initial = null, user = null, onDone = null
   const [farms, setFarms] = useState([]);
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  // price
+  const [price, setPrice] = useState(initial?.price !== undefined && initial?.price !== null ? String(initial.price) : "");
   // Состояние паспорта
   const [passport, setPassport] = useState(initial?.passport ? {
     origin: initial.passport.origin || "",
@@ -360,7 +350,6 @@ export default function ProductForm({ initial = null, user = null, onDone = null
   } : { origin: "", variety: "", harvest_date: "", certifications: [], data: {} });
   const [passportSaving, setPassportSaving] = useState(false);
 
-  // Загрузка ферм при монтировании компонента
   useEffect(() => {
     async function loadFarms() {
       try {
@@ -378,7 +367,6 @@ export default function ProductForm({ initial = null, user = null, onDone = null
     loadFarms();
   }, [user]);
 
-  // Если initial меняется (например, редактирование другого товара), обновим локальный стейт passport
   useEffect(() => {
     if (initial?.passport) {
       setPassport({
@@ -391,7 +379,6 @@ export default function ProductForm({ initial = null, user = null, onDone = null
     }
   }, [initial]);
 
-  // Сохранение паспорта в API
   async function savePassportToAPI(productId) {
     setPassportSaving(true);
     try {
@@ -410,30 +397,48 @@ export default function ProductForm({ initial = null, user = null, onDone = null
     }
   }
 
-  // Обработка отправки формы
   async function handleSubmit(e) {
     e.preventDefault();
     setMsg && setMsg(null);
     setLoading(true);
 
     try {
-      const payload = { name, short_description: shortDescription, farm_id: farmId || null };
+      // Валидация: при создании price обязателен и > 0
+      if (!initial) {
+        const n = parseFloat(price);
+        if (isNaN(n) || n <= 0) {
+          setMsg && setMsg("Укажите корректную цену (> 0)");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const payloadBase = { name, short_description: shortDescription, farm_id: farmId || null };
+      // добавляем цену:
+      const createPayload = { ...payloadBase, price: price !== "" ? parseFloat(price) : undefined };
       let resultProduct = null;
 
       if (initial && initial.id) {
-        const res = await updateProduct(initial.id, payload);
+        const updatePayload = {};
+        if (name !== initial.name) updatePayload.name = name;
+        if (shortDescription !== (initial.short_description || "")) updatePayload.short_description = shortDescription;
+        if ((farmId || "") !== (initial.farm_id ? String(initial.farm_id) : "")) updatePayload.farm_id = farmId || null;
+        // если пользователь ввёл цену (не пустая строка) — отправим её
+        if (price !== "") updatePayload.price = parseFloat(price);
+        const res = await updateProduct(initial.id, updatePayload);
         if (!res || !res.ok) throw new Error(res?.data?.detail || "Ошибка обновления товара");
         resultProduct = res.data;
       } else {
-        const res = await createProduct(payload);
+        // CREATE: price обязателен 
+        const res = await createProduct(createPayload);
         if (!res || !res.ok || !res.data?.id) throw new Error(res?.data?.detail || "Ошибка создания товара");
         resultProduct = res.data;
       }
 
-      // Сохранение паспорта
+      // passport
       await savePassportToAPI(resultProduct.id);
 
-      // Загрузка медиа файла, если он предоставлен
+      // media upload (если есть)
       if (file) {
         try {
           const up = await uploadProductMediaDirect(resultProduct.id, file, true);
@@ -464,19 +469,33 @@ export default function ProductForm({ initial = null, user = null, onDone = null
     <form className="p-4 bg-gray-50 rounded" onSubmit={handleSubmit} noValidate>
       <h2 className="text-xl font-semibold mb-4">{initial ? "Редактировать товар" : "Создать товар"}</h2>
 
-      {/* Поле названия */}
       <div className="mb-3 row">
         <label className="label" htmlFor="product-name">Название</label>
         <input id="product-name" name="product_name" className="w-full input" value={name} onChange={(e) => setName(e.target.value)} required placeholder="" />
       </div>
 
-      {/* Поле короткого описания */}
       <div className="mb-3 row">
         <label className="label" htmlFor="product-short">Короткое описание</label>
         <input id="product-short" name="product_short_description" className="w-full input" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} placeholder="" />
       </div>
 
-      {/* Поле выбора фермы */}
+      
+      <div className="mb-3 row">
+        <label className="label" htmlFor="product-price">Цена (₽)</label>
+        <input
+          id="product-price"
+          name="product_price"
+          className="w-full input"
+          type="number"
+          step="0.01"
+          min="0.01"
+          value={price}
+          onChange={e => setPrice(e.target.value)}
+          placeholder="Например 12.50"
+          required={!initial} 
+        />
+      </div>
+
       <div className="mb-3 row">
         <label className="label" htmlFor="product-farm">Ферма</label>
         <select id="product-farm" name="product_farm_id" className="w-full input" value={farmId ?? ""} onChange={(e) => setFarmId(e.target.value)}>
@@ -485,16 +504,13 @@ export default function ProductForm({ initial = null, user = null, onDone = null
         </select>
       </div>
 
-      {/* Поле загрузки фото */}
       <div className="mb-3 row">
         <label className="label" htmlFor="product-photo">Фото (опционально)</label>
         <input id="product-photo" name="product_photo" type="file" className="input" onChange={e => setFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)} accept="image/*" />
       </div>
 
-      {/* Передаём passport как контролируемый prop и onChange — избегаем двойной синхронизации */}
       <ProductPassportForm passport={passport} onChange={(p) => setPassport(p)} />
 
-      {/* Кнопки формы */}
       <div className="mt-4 row">
         <button className="btn" type="submit" disabled={loading || passportSaving}>{loading ? "Сохранение..." : (initial ? "Сохранить" : "Создать")}</button>
         {onCancel && <button type="button" className="btn" style={{ marginLeft: 8 }} onClick={onCancel}>Отмена</button>}
