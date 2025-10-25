@@ -133,14 +133,186 @@ function ProductPassportForm({ passport = null, onChange }) {
 
   const [customKey, setCustomKey] = useState("");
   const [customValue, setCustomValue] = useState("");
+
+
+  const [harvestDisplay, setHarvestDisplay] = useState(() => {
+    const v = (safePassport.data || {})["Время сбора урожая"] || "";
+    return formatHarvestForDisplay(v);
+  });
+  const [harvestError, setHarvestError] = useState("");
+
+  useEffect(() => {
+    const v = (safePassport.data || {})["Время сбора урожая"] || "";
+    setHarvestDisplay(formatHarvestForDisplay(v));
+  }, [safePassport.data && safePassport.data["Время сбора урожая"]]);
+
+  function pad(n) {
+    return (n < 10 ? "0" : "") + n;
+  }
+  function formatIsoToDDMMYYYYHHMM(val) {
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return val;
+      return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch (e) {
+      return val;
+    }
+  }
+  function looksLikeDDMMYYYYHHMM(s) {
+    return /^\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2}$/.test(s);
+  }
+  function parseDDMMYYYYHHMMToIso(s) {
+    const m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})$/);
+    if (!m) return null;
+    const dd = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10) - 1;
+    const yyyy = parseInt(m[3], 10);
+    const hh = parseInt(m[4], 10);
+    const min = parseInt(m[5], 10);
+    const d = new Date(yyyy, mm, dd, hh, min);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString();
+  }
+  function formatHarvestForDisplay(val) {
+    if (!val) return "";
+    if (looksLikeDDMMYYYYHHMM(val)) return val;
+    try {
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) {
+        return formatIsoToDDMMYYYYHHMM(val);
+      }
+    } catch (e) {}
+    return val;
+  }
+
+
+  function maskDigitsToDisplay(rawDigits) {
+   
+    const d = rawDigits.slice(0, 12);
+    const parts = [];
+    if (d.length >= 2) {
+      parts.push(d.slice(0,2)); 
+    } else if (d.length > 0) {
+      parts.push(d);
+    }
+    if (d.length >= 4) {
+      parts.push(d.slice(2,4)); 
+    } else if (d.length > 2) {
+      parts.push(d.slice(2));
+    }
+    
+    if (d.length >= 8) {
+      parts.push(d.slice(4,8));
+    } else if (d.length > 4) {
+      parts.push(d.slice(4));
+    }
+  
+    if (d.length >= 10) {
+      parts.push(d.slice(8,10));
+    } else if (d.length > 8) {
+      parts.push(d.slice(8));
+    }
+    
+    if (d.length === 12) {
+      parts.push(d.slice(10,12));
+    } else if (d.length > 10) {
+      parts.push(d.slice(10));
+    }
+
+   
+    let display = "";
+    if (parts.length > 0) {
+      display += parts[0]; 
+    }
+    if (d.length >= 3) {
+      display += "." + (parts[1] || "");
+    } else if (d.length >= 3) {
+      display += "." + (parts[1] || "");
+    }
+    if (d.length >= 5) {
+      display += "." + (parts[2] || "");
+    } else if (d.length > 4) {
+      display += "." + (parts[2] || "");
+    }
+    if (d.length >= 9) {
+      display += " " + (parts[3] || "");
+    } else if (d.length > 8) {
+      display += " " + (parts[3] || "");
+    }
+    if (d.length >= 11) {
+      display += ":" + (parts[4] || "");
+    } else if (d.length > 10) {
+      display += ":" + (parts[4] || "");
+    }
+
+    return display;
+  }
+
+  
+  const handleHarvestChange = (e) => {
+    const raw = e.target.value || "";
+   
+    const digits = raw.replace(/\D/g, "").slice(0, 12);
+    const display = maskDigitsToDisplay(digits);
+    setHarvestDisplay(display);
+
+    if (digits.length === 12) {
+      
+      const dd = digits.slice(0,2);
+      const mm = digits.slice(2,4);
+      const yyyy = digits.slice(4,8);
+      const hh = digits.slice(8,10);
+      const min = digits.slice(10,12);
+      const formatted = `${dd}.${mm}.${yyyy} ${hh}:${min}`;
+      const iso = parseDDMMYYYYHHMMToIso(formatted);
+      if (iso) {
+        setDataKey("Время сбора урожая", iso);
+        setHarvestError("");
+      } else {
+        
+        setDataKey("Время сбора урожая", "");
+        setHarvestError("Неверная дата/время");
+      }
+    } else {
+      
+      setDataKey("Время сбора урожая", "");
+      setHarvestError("Введите полностью в формате дд.мм.гггг чч:мм");
+    }
+  };
+
+ 
+  const handleHarvestBlur = () => {
+    if (looksLikeDDMMYYYYHHMM(harvestDisplay)) {
+      const iso = parseDDMMYYYYHHMMToIso(harvestDisplay);
+      if (iso) {
+        setDataKey("Время сбора урожая", iso);
+        setHarvestError("");
+      } else {
+        setDataKey("Время сбора урожая", "");
+        setHarvestError("Неверная дата/время");
+      }
+    } else {
+      setDataKey("Время сбора урожая", "");
+      if (harvestDisplay) setHarvestError("Введите полностью в формате дд.мм.гггг чч:мм");
+      else setHarvestError("");
+    }
+  };
+ 
+
   const addCustomParam = () => {
-    if (!customKey) return;
-    if (RESERVED_SENSOR_KEYS.includes(customKey)) {
+    const key = (customKey || "").trim();
+    if (!key) return;
+    if (RESERVED_SENSOR_KEYS.includes(key)) {
       setCustomKey("");
       setCustomValue("");
       return;
     }
-    const d = { ...(safePassport.data || {}), [customKey]: customValue };
+    if (safePassport.data && Object.prototype.hasOwnProperty.call(safePassport.data, key)) {
+      setCustomKey("");
+      setCustomValue("");
+      return;
+    }
+    const d = { ...(safePassport.data || {}), [key]: customValue };
     onChange && onChange({ ...safePassport, data: d });
     setCustomKey("");
     setCustomValue("");
@@ -261,7 +433,19 @@ function ProductPassportForm({ passport = null, onChange }) {
 
             <div className="row mt-5">
               <label className="label" htmlFor="sensor-harvest-time">Время сбора урожая (по данным)</label>
-              <input id="sensor-harvest-time" name="sensor_harvest_time" className="w-full input" value={safePassport.data["Время сбора урожая"] || ""} onChange={(e) => setDataKey("Время сбора урожая", e.target.value)} />
+              <input
+                id="sensor-harvest-time"
+                name="sensor_harvest_time"
+                className="w-full input"
+                value={harvestDisplay}
+                onChange={handleHarvestChange}
+                onBlur={handleHarvestBlur}
+                placeholder=""
+                aria-describedby="harvest-error"
+                aria-label="Время сбора урожая в формате дд.мм.гггг чч:мм"
+              />
+             
+              {harvestError ? <div id="harvest-error" className="text-xs text-red-600 mt-1">{harvestError}</div> : null}
             </div>
 
             <div className="row mt-5">
@@ -299,10 +483,35 @@ function ProductPassportForm({ passport = null, onChange }) {
           {Object.entries(safePassport.data || {})
             .filter(([k]) => !RESERVED_SENSOR_KEYS.includes(k))
             .map(([k, v], idx) => (
-              <div key={k} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <input id={`custom-key-${idx}`} className="w-1-3 input" name={`custom_key_${idx}`} value={k} readOnly aria-readonly />
-                <input id={`custom-val-${idx}`} className="flex-1 input" name={`custom_val_${idx}`} value={v} onChange={(e) => setDataKey(k, e.target.value)} />
-                <button type="button" className="text-red-600" onClick={() => removeDataKey(k)}>✕</button>
+              <div key={k} style={{ display: "flex", gap: 8, alignItems: "center", minWidth: 0 }}>
+               
+                <input
+                  id={`custom-key-${idx}`}
+                  className="input"
+                  name={`custom_key_${idx}`}
+                  value={k}
+                  readOnly
+                  aria-readonly
+                  style={{ flexBasis: "66%", flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                />
+              
+                <input
+                  id={`custom-val-${idx}`}
+                  className="input"
+                  name={`custom_val_${idx}`}
+                  value={v}
+                  onChange={(e) => setDataKey(k, e.target.value)}
+                  style={{ flexBasis: "32%", flexShrink: 0, minWidth: 0 }}
+                />
+                <button
+                  type="button"
+                  className="text-red-600"
+                  onClick={() => removeDataKey(k)}
+                  aria-label={`Удалить параметр ${k}`}
+                  style={{ flexShrink: 0 }}
+                >
+                  ✕
+                </button>
               </div>
             ))
           }
@@ -405,75 +614,95 @@ export default function ProductForm({ initial = null, user = null, onDone = null
     setMsg && setMsg(null);
     setLoading(true);
 
-  try {
-    const priceNum = price !== "" ? Number(price) : null;
-    const pricePayload = {};
-    if (priceNum != null && !Number.isNaN(priceNum)) {
-      pricePayload.price = priceNum; 
-      pricePayload.price_value = priceNum; 
-      pricePayload.price_cents = Math.round(priceNum * 100);
-    }
-
-    const payload = {
-      name,
-      short_description: shortDescription,
-      farm_id: farmId || null,
-      category: category || undefined,
-      ...pricePayload
-    };
-
-    let resultProduct = null;
-    let res;
-
-    if (initial && initial.id) {
-      res = await updateProduct(initial.id, payload);
-      console.log("UPDATE product response:", res);
-      if (!res || !res.ok) throw new Error(res?.data?.detail || "Ошибка обновления товара");
-      resultProduct = res.data;
-    } else {
-      res = await createProduct(payload);
-      console.log("CREATE product response:", res);
-      if (!res || !res.ok || !res.data?.id) {
-        throw new Error(res?.data?.detail || "Ошибка создания товара");
-      }
-      resultProduct = res.data;
-    }
-
     try {
-      const full = await getProduct(resultProduct.id);
-      console.log("GET full product after create/update:", full);
-      if (full && full.ok && full.data) resultProduct = full.data;
-    } catch (errGet) {
-      console.warn("Не удалось получить полный продукт после создания/обновления:", errGet);
-    }
-
-    await savePassportToAPI(resultProduct.id);
-
-    if (file) {
-      try {
-        const up = await uploadProductMediaDirect(resultProduct.id, file, true);
-        if (!up || up.ok === false) throw new Error(up?.data?.detail || "Ошибка загрузки файла");
-        const objectKey = up.data?.object_key;
-        const confirm = await confirmMediaUpload(resultProduct.id, { object_key: objectKey, is_primary: true, mime_type: file.type, meta: {} });
-        if (!confirm || !confirm.ok) throw new Error(confirm?.data?.detail || "Ошибка подтверждения медиа");
-      } catch (err) {
-        console.warn("media upload error", err);
-        setMsg && setMsg("Товар создан, но не удалось загрузить фото: " + (err.message || err));
-        setLoading(false);
-        onDone && onDone(resultProduct);
-        return;
+      if (passport && passport.data && passport.data["Время сбора урожая"]) {
+        const val = passport.data["Время сбора урожая"];
+        if (typeof val === "string" && /^[0-9]{2}\.[0-9]{2}\.[0-9]{4}\s[0-9]{2}:[0-9]{2}$/.test(val)) {
+          const m = val.match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})$/);
+          if (m) {
+            const dd = parseInt(m[1], 10);
+            const mm = parseInt(m[2], 10) - 1;
+            const yyyy = parseInt(m[3], 10);
+            const hh = parseInt(m[4], 10);
+            const min = parseInt(m[5], 10);
+            const d = new Date(yyyy, mm, dd, hh, min);
+            if (!isNaN(d.getTime())) {
+              passport.data["Время сбора урожая"] = d.toISOString();
+            } else {
+              passport.data["Время сбора урожая"] = "";
+            }
+          }
+        }
       }
-    }
 
-    setMsg && setMsg(initial ? "Товар обновлён" : "Товар создан");
-    onDone && onDone(resultProduct);
-  } catch (err) {
-    console.error("handleSubmit error:", err);
-    setMsg && setMsg(err.message || String(err));
-  } finally {
-    setLoading(false);
+      const priceNum = price !== "" ? Number(price) : null;
+      const pricePayload = {};
+      if (priceNum != null && !Number.isNaN(priceNum)) {
+        pricePayload.price = priceNum; 
+        pricePayload.price_value = priceNum; 
+        pricePayload.price_cents = Math.round(priceNum * 100);
+      }
+
+      const payload = {
+        name,
+        short_description: shortDescription,
+        farm_id: farmId || null,
+        category: category || undefined,
+        ...pricePayload
+      };
+
+      let resultProduct = null;
+      let res;
+
+      if (initial && initial.id) {
+        res = await updateProduct(initial.id, payload);
+        console.log("UPDATE product response:", res);
+        if (!res || !res.ok) throw new Error(res?.data?.detail || "Ошибка обновления товара");
+        resultProduct = res.data;
+      } else {
+        res = await createProduct(payload);
+        console.log("CREATE product response:", res);
+        if (!res || !res.ok || !res.data?.id) {
+          throw new Error(res?.data?.detail || "Ошибка создания товара");
+        }
+        resultProduct = res.data;
+      }
+
+      try {
+        const full = await getProduct(resultProduct.id);
+        console.log("GET full product after create/update:", full);
+        if (full && full.ok && full.data) resultProduct = full.data;
+      } catch (errGet) {
+        console.warn("Не удалось получить полный продукт после создания/обновления:", errGet);
+      }
+
+      await savePassportToAPI(resultProduct.id);
+
+      if (file) {
+        try {
+          const up = await uploadProductMediaDirect(resultProduct.id, file, true);
+          if (!up || up.ok === false) throw new Error(up?.data?.detail || "Ошибка загрузки файла");
+          const objectKey = up.data?.object_key;
+          const confirm = await confirmMediaUpload(resultProduct.id, { object_key: objectKey, is_primary: true, mime_type: file.type, meta: {} });
+          if (!confirm || !confirm.ok) throw new Error(confirm?.data?.detail || "Ошибка подтверждения медиа");
+        } catch (err) {
+          console.warn("media upload error", err);
+          setMsg && setMsg("Товар создан, но не удалось загрузить фото: " + (err.message || err));
+          setLoading(false);
+          onDone && onDone(resultProduct);
+          return;
+        }
+      }
+
+      setMsg && setMsg(initial ? "Товар обновлён" : "Товар создан");
+      onDone && onDone(resultProduct);
+    } catch (err) {
+      console.error("handleSubmit error:", err);
+      setMsg && setMsg(err.message || String(err));
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   return (
     <div>

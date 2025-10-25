@@ -191,22 +191,28 @@ export default function MainPage({ q, user, onOpen, onEdit, onNavigate, onDelete
         </div>
         <div className="max-w-[1330px] mx-auto">
           {loading ? <div className="mt-6">Загрузка...</div> : list.length === 0 ? <div className="mt-6">Пусто</div> : (
-            <div id="products" className="mt-6 space-y-4">
+            <div id="products" className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 mt-6 gap-6 w-full">
               {list.map(p => (
-                <ProductCard key={p.id} product={p} user={user} onOpen={onOpen} onEdit={onEdit} onDelete={onDelete} onAddToCart={(prod, qty) => {
-                  try {
-                    const raw = localStorage.getItem("cart");
-                    const cart = raw ? JSON.parse(raw) : [];
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  user={user}
+                  onOpen={onOpen}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onAddToCart={(prod, qty) => {
+                    try {
+                      const raw = localStorage.getItem("cart");
+                      const cart = raw ? JSON.parse(raw) : [];
 
-                    const idx = cart.findIndex(c => c.product.id === prod.id);
-                    if (idx >= 0) cart[idx].qty = Math.min((cart[idx].qty || 0) + qty, prod.stock || 9999);
-
-                    else cart.push({ product: prod, qty });
-                    localStorage.setItem("cart", JSON.stringify(cart));
-                    window.dispatchEvent(new CustomEvent("cart:updated"));
-                    
-                  } catch (err) { }
-                }} />
+                      const idx = cart.findIndex(c => c.product.id === prod.id);
+                      if (idx >= 0) cart[idx].qty = Math.min((cart[idx].qty || 0) + qty, prod.stock || 9999);
+                      else cart.push({ product: prod, qty });
+                      localStorage.setItem("cart", JSON.stringify(cart));
+                      window.dispatchEvent(new CustomEvent("cart:updated"));
+                    } catch (err) { }
+                  }}
+                />
               ))}
             </div>
           )}

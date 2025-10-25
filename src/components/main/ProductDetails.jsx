@@ -188,9 +188,9 @@ export default function ProductDetails({ productId, onClose, setMsg }) {
         <div className="lg:col-span-7 w-full">
           <div className="flex-col lg:flex-row flex w-full">
             <div className="flex gap-4 w-full">
-              <div className="flex-1 bg-white rounded-[20px] p-6 mr-0 lg:mr-40 pl-0 lg:pl-34 flex items-center justify-center">
+              <div className="flex-1 bg-white rounded-[20px] p-6 flex items-center justify-center overflow-hidden lg:pl-8 lg:pr-8">
                 {imgSrc ? (
-                  <img src={imgSrc} alt={product.name} className="w-full max-h-[520px] object-contain" />
+                  <img src={imgSrc} alt={product.name} className="w-full h-auto max-h-[720px] object-cover rounded-[16px] shadow-sm" />
                 ) : (
                   <div className="w-full h-[520px] flex items-center justify-center text-gray-400">{loadingImg ? "Загрузка фотографии..." : "Нет фото"}</div>
                 )}
