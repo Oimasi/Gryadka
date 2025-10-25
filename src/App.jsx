@@ -121,6 +121,7 @@ export default function App() {
         onEdit={p => openEditProduct(p)}
         onDelete={p => handleDelete(p)}
         onNavigate={navigate}
+        onSelectCategory={handleSelectCategory}
       />}
 
       {page === "all" && <ProductsList key={productsForReload} q={query} user={user}
