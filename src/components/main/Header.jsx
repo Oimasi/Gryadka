@@ -10,6 +10,8 @@ import ProfileDropdown from "../ui/profiledropdown";
 export default function Header({ user, onNavigate, onLogout, query, setQuery, onSearch }) {
   const [address, setAddress] = useState(null);
   const [error, setError] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [pressedBurger, setPressedBurger] = useState(false)
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -40,8 +42,49 @@ export default function Header({ user, onNavigate, onLogout, query, setQuery, on
     );
   }, []);
 
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <header className="flex-col flex gap-[15px] justify-between max-w-[1330px] bg-white sticky top-0 z-50 my-[8px] mx-auto p-[16px]">
+      {pressedBurger && (
+        <div
+          key="burger-menu"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 z-[2000] w-screen h-screen bg-white flex flex-col gap-6 p-10">
+            <button className="text-[#2e7433] py-2 px-4 bg-none border-1 border-[#3E8D43] transition-all duration-150 rounded-xl cursor-pointer active:bg-[#3E8D43] active:text-white hover:text-white hover:bg-[#3E8D43]" 
+              onClick={() => {
+                onNavigate("main")
+                setPressedBurger(false)
+              }}>
+                Главная
+            </button>
+            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => {
+                onNavigate("categories")
+                setPressedBurger(false)
+              }}>
+                Все категории
+            </button>
+            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => {
+                onNavigate("all")
+                setPressedBurger(false)
+              }}>
+                Все товары
+            </button>
+            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => {
+                onNavigate("faqs")
+                setPressedBurger(false)
+              }}>
+                FAQ
+            </button>
+        </div>
+      )}
       <div className="border-b-1 border-[#CCCCCC] flex flex-row pb-4 justify-between gap-[20px]">
         <img src={logo} className="w-[46px] h-[33px]" alt="Logo" />
         <div className="hidden flex-row md:flex gap-[15px] w-full justify-between">
@@ -88,22 +131,60 @@ export default function Header({ user, onNavigate, onLogout, query, setQuery, on
       
       
         <div className="items-center gap-auto flex justify-between flex-row">
-          <div className="hidden md:flex justify-between gap-5">
+          <div className="md:flex hidden justify-between gap-5">
             <button className="text-[#2e7433] py-2 px-4 bg-none border-1 border-[#3E8D43] transition-all duration-150 rounded-xl cursor-pointer active:bg-[#3E8D43] active:text-white hover:text-white hover:bg-[#3E8D43]" onClick={() => onNavigate("main")}>
               Главная
             </button>
             <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => onNavigate("categories")}>Все категории</button>
             <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => onNavigate("all")}>Все товары</button>
+            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => onNavigate("faqs")}>FAQ</button>
           </div>
-          <div className="justify-between items-right ml-auto float-right flex gap-4">
-            {user?.role === "farmer" ? (
+          <div className="justify-between flex gap-4">
+            {user?.role === "farmer" && (
               <div>
                 <ProfileDropdown onNavigate={onNavigate} onLogout={onLogout} />
               </div>
-            ) : (
-              <button className="text-black text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => onNavigate("all")}>Доставка</button>
             )}
           </div>
+            {isMobile && (
+              <div className="flex">
+                <button
+                  className="flex cursor-pointer ml-auto float-right mr-0 w-10 h-10 text-black items-center justify-center rounded z-[3000]"
+                  aria-pressed={pressedBurger}
+                  onClick={() => setPressedBurger(!pressedBurger)}
+                >
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 16 16">
+                    <rect
+                      y="7"
+                      width="16"
+                      height="1"
+                      rx="1"
+                      className={`origin-center transition-all duration-300 ${
+                        pressedBurger ? "rotate-45 translate-y-0" : "-translate-y-[5px]"
+                      }`}
+                    />
+                    <rect
+                      y="7"
+                      width="16"
+                      height="1"
+                      rx="1"
+                      className={`origin-center transition-all duration-300 ${
+                        pressedBurger ? "opacity-0" : "opacity-100"
+                      }`}
+                    />
+                    <rect
+                      y="7"
+                      width="16"
+                      height="1"
+                      rx="1"
+                      className={`origin-center transition-all duration-300 ${
+                        pressedBurger ? "-rotate-45 translate-y-[0.1px]" : "translate-y-[5px]"
+                      }`}
+                    />
+                  </svg>
+                </button>
+              </div>
+            )}
         </div>
     </header>
   );

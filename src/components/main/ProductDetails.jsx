@@ -3,6 +3,7 @@ import { getProduct, fetchImageAsObjectURL, getPassport } from "../../api";
 import discount from "/images/discount.svg"
 import { Footer } from "./Footer";
 import { addItem } from "../../hooks/useCart";
+import arrow from "/images/arrow_gray.svg"
 
 function ratingBadge(value) {
   if (!value) return <span className="inline-block px-2 py-1 rounded-full text-sm bg-gray-200 text-gray-800">—</span>;
@@ -34,7 +35,7 @@ function coordsToLink(s) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lat + "," + lon)}`;
 }
 
-export default function ProductDetails({ productId, onClose, setMsg }) {
+export default function ProductDetails({ productId, onClose, setMsg, onNavigate }) {
   const [qty, setQty] = useState(0);
   const [product, setProduct] = useState(null);
   const [passport, setPassport] = useState(null);
@@ -179,7 +180,10 @@ export default function ProductDetails({ productId, onClose, setMsg }) {
   return (
     <div className="max-w-[1330px] mx-auto px-4 py-5">
       <div className="flex justify-between items-start mb-4">
-        <div>
+        <div className="flex flex-row">
+          <div className="mr-5 cursor-pointer" onClick={() => onNavigate("all")}>
+            <img src={arrow} className="w-2.5" />
+          </div>
           <h3 className="text-[#A8A8A8]"><span className="text-[#A8A8A8] cursor-pointer" onClick={() => onNavigate("main")}>Главная ·</span> Категории · <span className="text-black">{product.category || "—"}</span></h3>
         </div>
       </div>

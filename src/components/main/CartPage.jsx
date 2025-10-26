@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getCart, subscribe, updateQty, removeItem, clearCart, getTotals } from "../../hooks/useCart";
+import { Footer } from "./Footer";
 
 export default function CartPage({ cartItems: propsCart, onCheckout, onNavigate }) {
   const [cart, setCart] = useState(propsCart && Array.isArray(propsCart) ? propsCart : getCart());
@@ -64,8 +65,8 @@ export default function CartPage({ cartItems: propsCart, onCheckout, onNavigate 
                     <div className="flex flex-row">
                       <div className="w-28 h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center">
                         <img 
-                          src={(it.product.media?.[0]?.presigned_url) || it.product.image || ""} 
-                          alt={it.product.name} 
+                          src={(it.product.media?.[0]?.presigned_url) || ""} 
+                          alt="нет фото" 
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -151,6 +152,9 @@ export default function CartPage({ cartItems: propsCart, onCheckout, onNavigate 
 
         </div>
       )}
+      <div className="mt-40 w-full">
+        <Footer />
+      </div>
     </div>
   );
 }

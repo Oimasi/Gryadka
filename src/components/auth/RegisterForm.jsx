@@ -16,24 +16,24 @@ export default function RegisterForm({ onSuccess, setMsg, onNavigate }) {
   const [loading, setLoading] = useState(false);
 
   async function submit(e) {
-  e.preventDefault();
-  setMsg && setMsg(null);
-  setLoading(true);
+    e.preventDefault();
+    setMsg && setMsg(null);
+    setLoading(true);
 
-  try {
-    const r = await register({ email, password, first_name: first, last_name: last, role });
+    try {
+      const r = await register({ email, password, first_name: first, last_name: last, role });
 
-    if (r.ok) {
-      setMsg && setMsg("✅ Регистрация успешна. Войдите.");
-      onSuccess && onSuccess(); 
-    } else {
-      const detail = r.data?.detail || JSON.stringify(r.data) || "Ошибка регистрации";
-      setMsg && setMsg(detail);
-    }
-    } catch (err) {
-      setMsg && setMsg("Ошибка сети");
-    } finally {
-      setLoading(false);
+      if (r.ok) {
+        setMsg && setMsg("✅ Регистрация успешна. Войдите.");
+        onSuccess && onSuccess(); 
+      } else {
+        const detail = r.data?.detail || JSON.stringify(r.data) || "Ошибка регистрации";
+        setMsg && setMsg(detail);
+      }
+      } catch (err) {
+        setMsg && setMsg("Ошибка сети");
+      } finally {
+        setLoading(false);
     }
   }
   return (

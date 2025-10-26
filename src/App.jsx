@@ -14,6 +14,8 @@ import MainPage from "./components/main/mainPage";
 import CartPage from "./components/main/CartPage";
 import CheckoutPage from "./components/main/CheckoutPage";
 import Categories from "./components/main/Categories";
+import SuccessPage from "./components/main/Success";
+import Fags from "./components/main/Faqs";
 
 export default function App() {
   // Состояния приложения
@@ -144,13 +146,11 @@ export default function App() {
         onDelete={p => handleDelete(p)}
       />}
 
-      {page == "cart" && <CartPage onNavigate={navigate} onCheckout={(cart) => {
-  
-        navigate("checkout");
-      }} />}
+      {page == "cart" && <CartPage onNavigate={navigate} onCheckout={(cart) => { navigate("checkout") }} />}
 
-      {page === "checkout" && <CheckoutPage />}
+      {page == "faqs" && <Fags />}
 
+      {page === "checkout" && <CheckoutPage onNavigate={navigate} />}
 
       {page === "create_product" && user && user.role === "farmer" && (
         <ProductForm
@@ -173,9 +173,11 @@ export default function App() {
 
       {page === "create_farm" && user && user.role === "farmer" && <CreateFarm user={user} onDone={() => setPage("all")} setMsg={setMsg} />}
 
-      {page === "product_details" && openProduct && <ProductDetails productId={openProduct.id} onClose={() => setPage("all")} setMsg={setMsg} />}
+      {page === "product_details" && openProduct && <ProductDetails onNavigate={navigate} productId={openProduct.id} onClose={() => setPage("all")} setMsg={setMsg} />}
 
       {page === "profile" && <Profile user={user}  onNavigate={navigate}/>}
+
+      {page === "success" && <SuccessPage onNavigate={navigate}/>}
 
       {!user && page === "my" && <div className="form">Войдите, чтобы просматривать ваши товары</div>}
     </div>
