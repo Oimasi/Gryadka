@@ -132,6 +132,7 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
   if (!product) return <div className="max-w-6xl mx-auto p-6">Товар не найден</div>;
 
   const data = passport?.data || {};
+  const certifications = passport?.certifications || product?.certifications || [];
   const sensorKeys = new Set([
     "Есть датчики",
     "Средний pH за время выращивания",
@@ -176,6 +177,37 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
 
   const oldPrice = product.old_price ?? product.price_old ?? null;
   const mainPrice = product.price ?? product.price_value ?? product?.price?.amount ?? null;
+
+  function renderCertificateCard(cert) {
+    const key = cert._uid || `${cert.name}-${cert.date || ""}`;
+    return (
+      <div key={key} className="bg-white rounded-[16px] p-4 shadow-sm border border-gray-100 flex gap-4 items-start">
+        <div className="flex-shrink-0">
+          <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-[#3E8D43]/20 to-[#A8D5A0]/10">
+            {/* сертификат */}
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M12 2l2.5 5.5L20 8l-4 3 1 6L12 14l-5 3 1-6L4 8l5.5-.5L12 2z" fill="#2F855A"/>
+            </svg>
+          </div>
+        </div>
+        <div className="flex-1">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-sm text-gray-500">Сертификат</div>
+              <div className="text-base font-semibold text-black mt-1">{cert.name || "—"}</div>
+              <div className="text-sm text-gray-600 mt-1">{cert.issuer ? `Выдан: ${cert.issuer}` : ""}</div>
+            </div>
+            <div className="text-sm text-gray-500 text-right">
+              <div>{cert.date ? formatDate(cert.date) : "—"}</div>
+            </div>
+          </div>
+          {cert.notes ? (
+            <div className="text-sm text-gray-700 mt-3 leading-relaxed">{cert.notes}</div>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1330px] mx-auto px-4 py-5">
@@ -253,7 +285,7 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
                   <h4 className="text-[18px] text-black font-medium mb-2">Паспорт товара</h4>
                   <p className="text-[15px] text-gray-500">Происхождение: <span className="text-black">{passport?.origin || "-"}</span></p>
                   <p className="text-[15px] text-gray-500 mt-1">Сорт / вид: <span className="text-black">{passport?.variety || "-"}</span></p>
-                  <p className="text-[15px] text-gray-500 mt-1">Дата сбора: <span className="text-black">{formatDate(passport.harvest_date)}</span></p>
+                  <p className="text-[15px] text-gray-500 mt-1">Дата сбора: <span className="text-black">{formatDate(passport?.harvest_date)}</span></p>
                   <p className="text-[15px] text-gray-500 mt-1">Артикул: <span className="text-black">{product.id}</span></p>
                   <p className="text-[15px] text-gray-500 mt-1">
                     {data["Местоположение точки ( координаты участка)"] ? (
@@ -400,6 +432,19 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
               
             </div>
           )}
+
+         
+          <div className="mt-8">
+            <div className="text-[18px] font-medium mb-4 text-black">Сертификаты</div>
+            {certifications && certifications.length > 0 ? (
+              <div className="grid gap-3">
+                {certifications.map(cert => renderCertificateCard(cert))}
+              </div>
+            ) : (
+              <div className="text-gray-500 text-md">Сертификаты отсутствуют</div>
+            )}
+          </div>
+
         </div>
       </div>
 
