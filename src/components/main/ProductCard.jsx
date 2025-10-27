@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { fetchImageAsObjectURL } from "../../api";
 import { addItem } from "../../hooks/useCart";
-import basket from "/images/basket-white.svg"
+import basket from "/images/basket-white.svg";
 import ProductDropdown from "../ui/productdropdown";
 
-export default function ProductCard({ product, user, onOpen, onEdit, onDelete }) {
+export default function ProductCard({ product, user, onOpen, onEdit, onDelete, variant = "" }) {
+  const isNews = variant === "news";
+
   const primary = (product.media && product.media.find(m => m.is_primary)) || null;
   const thumbPresigned = primary ? primary.presigned_url : null;
   const mediaId = primary ? primary.id : null;
@@ -14,17 +16,11 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete })
   const [qty, setQty] = useState(0);
 
   const rawPrice = product.price ?? null;
-
   const priceVal = rawPrice != null ? Number(rawPrice) : null;
   const priceStr = priceVal != null ? `${priceVal.toLocaleString("ru-RU")} ₽` : "100₽";
 
-  const category = product.category || "";
-
   const stock = product.stock ?? product.quantity ?? product.available ?? null;
   const inStock = stock == null ? true : stock > 0;
-
-  const canEdit = user && (user.role === "admin" || user.id === product.owner_id);
-
 
   useEffect(() => {
     let mounted = true;
@@ -85,58 +81,94 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete })
   }
 
   return (
-    <div onClick={() => onOpen?.(product)} className="bg-[#ffffff] border-1 border-[#F2F2F2] rounded-2xl overflow-hidden transition cursor-pointer flex flex-col w-full">
-      <div className="relative w-full h-full max-h-[240px] bg-gray-100 flex items-center justify-center">
+    <div
+      onClick={() => onOpen?.(product)}
+      className="bg-[#ffffff] border-1 border-[#F2F2F2] rounded-2xl overflow-hidden transition cursor-pointer flex flex-col w-full h-full"
+    >
+      <div className="relative w-full h-[140px] sm:h-[200px] md:h-[240px] bg-gray-100 flex items-center justify-center">
         {imgSrc ? (
-          <img src={imgSrc} alt={product.name || "product"} className="object-cover max-h-[240px] w-full" />
+          <img
+            src={imgSrc}
+            alt={product.name || "product"}
+            className={
+              isNews
+                ? "block object-contain object-center max-w-full max-h-full mx-auto"
+                : "object-cover object-center w-full h-full"
+            }
+            style={{ transform: 'translateZ(0)' }}
+          />
         ) : (
-          <span className="text-gray-400 text-sm w-full text-center justify-center mb-60 mt-64 items-center">{loadingImg ? "Загрузка..." : "Нет фото"}</span>
+          <span className="text-gray-400 text-sm w-full text-center flex items-center justify-center">
+            {loadingImg ? "Загрузка." : "Нет фото"}
+          </span>
         )}
-        <p className="absolute left-6 top-5 rounded-4xl bg-[#ffffff] text-[#000000] text-[12px] py-1.5 px-5 mb-1">
+
+        <p className={`absolute left-3 top-3 rounded-4xl bg-white text-black ${isNews ? 'text-[10px] sm:text-[11px]' : 'text-[11px] sm:text-[12px]'} py-1 px-3`}>
           {product.farm_name || "ФермаЗаповедъ"}
         </p>
-        <div className="absolute right-6 top-5">
+
+        <div className="absolute right-3 top-3">
           <ProductDropdown product={product} user={user} onOpen={onOpen} onEdit={onEdit} onDelete={onDelete}/>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 p-4 justify-between">
-        <div>
-          <div className="flex flex-row">
-            <div className="flex flex-col">
-              <h3 className="text-[18px] font-medium text-gray-900">
-                {product.name || "Без названия"}
-              </h3>
-              <div className="flex flex-row">
-                <p className="text-[#3E8D43] text-[18px] font-medium mt-1">{priceStr}</p>
-                <p className="text-[#A6A6A6] text-[14px] font-medium ml-1 mt-2">кг</p>
-              </div>
-            </div>
-            <div className="mt-3 flex justify-end ml-auto">
-              {qty === 0 ? (
-                <button onClick={(e) => { e.stopPropagation(); handleAdd(); }} disabled={!inStock} className="bg-[#3E8D43] w-[46px] h-[46px] items-center justify-center bg-none active:bg-[#3E8D43]/70 transition-all duration-150 hover:bg-[#3E8D43]/70 rounded-4xl cursor-pointer">
-                    <img src={basket} className="flex ml-[14px]"/>
-                </button>
-              ) : (
-                <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); changeQty(-1); }}
-                    className="px-3 py-2 bg-gray-100 rounded-md hover:bg-gray-200"
-                  >
-                    −
-                  </button>
-                  <span className="font-medium text-lg w-6 text-center">{qty}</span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); changeQty(1); }}
-                    className="px-3 py-2 bg-gray-100 rounded-md hover:bg-gray-200"
-                  >
-                    +
-                  </button>
-                </div>
-              )}
+      <div className="flex flex-col gap-2 p-4 justify-between flex-1">
+        <div className="flex flex-row w-full">
+          <div className="flex flex-col min-w-0">
+            <h3
+              className={`${isNews ? 'text-[13px] sm:text-[15px]' : 'text-[16px] sm:text-[18px]'} font-medium text-gray-900`}
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                wordBreak: 'break-word',
+              }}
+            >
+              {product.name || "Без названия"}
+            </h3>
+
+            <div className="flex flex-row items-baseline mt-1">
+              <p className={isNews ? 'text-[#3E8D43] text-[14px] sm:text-[16px] font-medium' : 'text-[#3E8D43] text-[16px] sm:text-[18px] font-medium'}>
+                {priceStr}
+              </p>
+              <p className="text-[#A6A6A6] text-[12px] font-medium ml-1">{isNews ? 'кг' : 'кг'}</p>
             </div>
           </div>
+
+          <div className="mt-3 flex justify-end ml-auto">
+            {qty === 0 ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleAdd(); }}
+                disabled={!inStock}
+                className="flex items-center justify-center bg-[#3E8D43] w-10 h-10 sm:w-[46px] sm:h-[46px] active:bg-[#3E8D43]/70 transition-all duration-150 rounded-4xl cursor-pointer"
+                aria-label="Добавить в корзину"
+                type="button"
+              >
+                <img src={basket} alt="basket" className="w-5 h-5" />
+              </button>
+            ) : (
+              <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); changeQty(-1); }}
+                  className="px-3 py-2 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  −
+                </button>
+                <span className="font-medium text-lg w-6 text-center">{qty}</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); changeQty(1); }}
+                  className="px-3 py-2 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  +
+                </button>
+              </div>
+            )}
+          </div>
         </div>
+
+        <div className="mt-2"></div>
       </div>
     </div>
   );
