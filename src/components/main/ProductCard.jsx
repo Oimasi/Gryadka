@@ -85,25 +85,30 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete, v
       onClick={() => onOpen?.(product)}
       className="bg-[#ffffff] border-1 border-[#F2F2F2] rounded-2xl overflow-hidden transition cursor-pointer flex flex-col w-full h-full"
     >
-      <div className="relative w-full h-[140px] sm:h-[200px] md:h-[240px] bg-gray-100 flex items-center justify-center">
+      <div className="relative w-full h-[120px] sm:h-[200px] md:h-[240px] bg-gray-100 flex items-center justify-center">
         {imgSrc ? (
-          <img
-            src={imgSrc}
-            alt={product.name || "product"}
-            className={
-              isNews
-                ? "block object-contain object-center max-w-full max-h-full mx-auto"
-                : "object-cover object-center w-full h-full"
-            }
-            style={{ transform: 'translateZ(0)' }}
-          />
+          isNews ? (
+            <div
+              role="img"
+              aria-label={product.name || "product"}
+              className="w-full h-full bg-center bg-contain bg-no-repeat"
+              style={{ backgroundImage: `url(${imgSrc})` }}
+            />
+          ) : (
+            <img
+              src={imgSrc}
+              alt={product.name || "product"}
+              className="object-cover object-center w-full h-full"
+              style={{ transform: 'translateZ(0)' }}
+            />
+          )
         ) : (
-          <span className="text-gray-400 text-sm w-full text-center flex items-center justify-center">
+          <span className="text-gray-400 text-[12px] w-full text-center flex items-center justify-center">
             {loadingImg ? "Загрузка." : "Нет фото"}
           </span>
         )}
 
-        <p className={`absolute left-3 top-3 rounded-4xl bg-white text-black ${isNews ? 'text-[10px] sm:text-[11px]' : 'text-[11px] sm:text-[12px]'} py-1 px-3`}>
+        <p className={`absolute left-3 top-3 rounded-4xl bg-white text-black ${isNews ? 'text-[9px] sm:text-[11px] py-1 px-3' : 'text-[11px] sm:text-[12px] py-1 px-3'}`}>
           {product.farm_name || "ФермаЗаповедъ"}
         </p>
 
@@ -112,11 +117,11 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete, v
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 p-4 justify-between flex-1">
+      <div className={`${isNews ? 'p-3' : 'p-4'} flex flex-col gap-2 justify-between flex-1`}>
         <div className="flex flex-row w-full">
           <div className="flex flex-col min-w-0">
             <h3
-              className={`${isNews ? 'text-[13px] sm:text-[15px]' : 'text-[16px] sm:text-[18px]'} font-medium text-gray-900`}
+              className={`${isNews ? 'text-[11px] sm:text-[15px] leading-tight' : 'text-[16px] sm:text-[18px]'} font-medium text-gray-900`}
               style={{
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
@@ -130,10 +135,10 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete, v
             </h3>
 
             <div className="flex flex-row items-baseline mt-1">
-              <p className={isNews ? 'text-[#3E8D43] text-[14px] sm:text-[16px] font-medium' : 'text-[#3E8D43] text-[16px] sm:text-[18px] font-medium'}>
+              <p className={`${isNews ? 'text-[#3E8D43] text-[13px] sm:text-[16px]' : 'text-[#3E8D43] text-[16px] sm:text-[18px]'} font-medium`}>
                 {priceStr}
               </p>
-              <p className="text-[#A6A6A6] text-[12px] font-medium ml-1">{isNews ? 'кг' : 'кг'}</p>
+              <p className={`${isNews ? 'text-[#A6A6A6] text-[11px]' : 'text-[#A6A6A6] text-[13px]'} font-medium ml-1`}>кг</p>
             </div>
           </div>
 

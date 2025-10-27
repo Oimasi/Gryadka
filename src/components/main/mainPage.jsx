@@ -176,16 +176,20 @@ return (
           <div className="flex">
             <p className="text-white/40">Новости</p>
           </div>
-          <div className="flex lg:hidden mt-10">
-            <img src={bg} className="w-[250px] lg:w-[400px] lg:h-[297px] h-[167px]" />
+          <div className="flex lg:hidden mt-10 justify-center">
+          <img
+            src={bg}
+              className="max-w-[250px] w-full lg:w-[400px] lg:h-[297px] h-[167px] object-contain"
+              alt="news"
+            />
           </div>
           <div className="flex flex-col gap-3 mt-20 md:mt-0">
-            <p className="font-semibold text-[20px] md:text-[30px] leading-7 md:leading-9 text-white">Отслеживайте свежесть <br /> продукции в режиме реального времени</p>
-            <p className="text-[15px] md:text-[18px] text-white/70">Всё свежее, сезонное и честное<br />— напрямую от производителя к вам домой.</p>
+            <p className="font-semibold text-[16px] md:text-[30px] leading-6 md:leading-9 text-white">Отслеживайте свежесть <br /> продукции в режиме реального времени</p>
+            <p className="text-[13px] md:text-[18px] text-white/70">Всё свежее, сезонное и честное<br />— напрямую от производителя к вам домой.</p>
           </div>
         </div>
-        <div className="hidden lg:flex">
-          <img src={bg} className="w-[300px] lg:w-[400px] lg:h-[297px] h-[197px]" />
+        <div className="hidden lg:flex items-center justify-center">
+          <img src={bg} className="w-[300px] lg:w-[400px] lg:h-[297px] h-[197px] object-contain" alt="news" />
         </div>
       </div>
 
