@@ -3,7 +3,7 @@ import arrow from "/images/arrow_faqs.svg";
 import { FaqComponent } from "../ui/faq_component";
 import { Footer } from "./Footer";
 
-export default function Faqs() {
+export default function Faqs({ onNavigate }) {
   const [faqs, setFaqs] = useState([
     {
       question: "Как я могу оформить заказ?",
@@ -57,14 +57,19 @@ export default function Faqs() {
 
   return (
     <div className="bg-white flex flex-col gap-4 max-w-[1330px] my-4 mx-auto px-4">
-      <h2 className="text-xl font-semibold text-black">Часто задаваемые вопросы</h2>
-        <div className="bg-[#3E8D43] mt-4 flex flex-row h-full min-h-[150px] rounded-[20px] px-[40px] py-[30px] justify-between gap-auto">
+      <div className="flex flex-row">
+        <div className="mr-3 cursor-pointer" onClick={() => onNavigate("main")}>
+          <img src={arrow} className="mt-2 rotate-0 ml-1.5 mb-6 w-[17px] h-[12px]" />
+        </div>
+        <h2 className="text-xl font-semibold text-black">Часто задаваемые вопросы</h2>
+      </div>
+        <div className="bg-[#3E8D43] mt-4 flex flex-row h-full min-h-[150px] rounded-[20px] px-[30px] py-[25px] justify-between gap-auto">
             <div className="flex flex-col justify-between gap-auto">
                 <div className="flex">
                     <p className="text-white/40">FAQ</p>
                 </div>
                 <div className="flex flex-col gap-3 mt-10 md:mt-0">
-                    <p className="text-[19px] text-white">На этой странице мы собрали ответы на самые популярные вопросы о нашем сервисе</p>
+                    <p className="text-[15px] md:text-[18px] text-white">На этой странице мы собрали ответы на самые популярные вопросы о нашем сервисе</p>
                 </div>
             </div>
       </div>      

@@ -37,47 +37,46 @@ export default function RegisterForm({ onSuccess, setMsg, onNavigate }) {
     }
   }
   return (
-    <div className="min-h-screen w-full p-0 bg-[#3E8D43] flex justify-center items-center">
+    <div className="min-h-screen w-full p-0 bg-white md:bg-[#3E8D43] flex justify-center items-center">
       <button onClick={() => onNavigate("main")} className="absolute top-10 left-10 cursor-pointer">
         <img src={back} alt="Назад" className="w-[10px] h-[18px]" />
       </button>
-      <div className="rounded-full absolute left-auto top-18 px-4 py-2 bg-[#D9D9D9]/40">
-        <p className="text-white">Gryadka ID</p>
+      <div className="rounded-full absolute left-auto top-10 md:top-16 px-4 py-2 bg-[#D9D9D9]/40">
+        <p className="md:text-white text-black/40">Gryadka ID</p>
       </div>
-      <div className="bg-white p-10 sm:p-15 ml-5 mr-5 rounded-[30px] shadow-md max-w-[518px] w-full mt-35 mb-35">
+      <div className="bg-white p-2 sm:p-15 ml-5 mr-5 rounded-[30px] shadow-none md:shadow-md max-w-[518px] w-full mt-35 mb-35">
         <form className="justify-center items-center w-full" onSubmit={submit} noValidate>
           <img src={logo} className="w-[62px] h-[50px] justify-center items-center mx-auto mb-5"/>
-          <p className="text-[28px] text-center font-medium">Регистрация</p>
+          <p className="text-[24px] md:text-[28px] text-center font-medium">Регистрация</p>
           <p className="text-[#7D7D7D] text-center text-[15px] md:text-[17px]">Пожалуйста, зарегистрируйтесь</p>
 
           <div className="flex flex-col w-full max-w-[390px] mt-6">
-            <label className="mb-1 text-[15px] text-black" htmlFor="reg-email">Почта</label>
+            <label className="mb-1 text-[15px] md:text-[16px] text-black" htmlFor="reg-email">Почта</label>
             <input id="reg-email" className="mt-1 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" name="email" type="email" placeholder="email@email.com" aria-label="Email" value={email} onChange={e => setEmail(e.target.value)} required />
           </div>
 
           <div className="flex flex-col w-full max-w-[390px] mt-4">
-            <label className="mb-1 text-[15px] text-black" htmlFor="reg-password">Пароль</label>
+            <label className="mb-1 text-[15px] md:text-[16px] text-black" htmlFor="reg-password">Пароль</label>
             <input id="reg-password" name="password" className="mt-1 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" placeholder="Пароль  (не менее 9 символов)" aria-label="Пароль" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
           </div>
 
           <div className="flex flex-col w-full max-w-[390px] mt-4">
-            <label className="mb-1 text-[15px] text-black" htmlFor="reg-first">Имя</label>
+            <label className="mb-1 text-[15px] md:text-[16px] text-black" htmlFor="reg-first">Имя</label>
             <input id="reg-first" name="first_name" className="mt-1 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" placeholder="Имя" aria-label="Имя" value={first} onChange={e => setFirst(e.target.value)} required />
           </div>
 
           <div className="flex flex-col w-full max-w-[390px] mt-4">
-            <label className="mb-1 text-[15px] text-black" htmlFor="reg-last">Фамилия</label>
+            <label className="mb-1 text-[15px] md:text-[16px] text-black" htmlFor="reg-last">Фамилия</label>
             <input id="reg-last" name="last_name" className="mt-1 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" placeholder="Фамилия" aria-label="Фамилия" value={last} onChange={e => setLast(e.target.value)} required/>
           </div>
 
-          {/* Матвей, не передаю в бд отчество */}
           <div className="flex flex-col w-full max-w-[390px] mt-4">
-            <label className="mb-1 text-[15px] text-black">Отчество</label>
+            <label className="mb-1 text-[15px] md:text-[16px] text-black">Отчество</label>
             <input name="middle_name" className="mt-1 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" placeholder="Отчество (необязательно)" aria-label="Отчество" />
           </div>
 
           <div className="flex flex-col w-full max-w-[390px] mt-4">
-            <label className="mb-1 text-[15px] text-black" htmlFor="reg-role">Роль</label>
+            <label className="mb-1 text-[15px] md:text-[16px] text-black" htmlFor="reg-role">Роль</label>
             <Dropdown
               options={options}
               selected={role === "consumer" ? "Покупатель" : "Фермер"}
@@ -91,7 +90,7 @@ export default function RegisterForm({ onSuccess, setMsg, onNavigate }) {
           </div>
 
           <div className="text-center pt-3">
-            <span className="text-[#7D7D7D]">Уже есть аккаунт? <a className="text-black hover:text-black/60 active:text-black/60 cursor-pointer transition-all duration-100" onClick={() => onNavigate("login")}>Войти</a></span>
+            <span className="text-[#7D7D7D] text-[13px] md:text-[15px]">Уже есть аккаунт? <a className="text-black hover:text-black/60 active:text-black/60 cursor-pointer transition-all duration-100" onClick={() => onNavigate("login")}>Войти</a></span>
           </div>
         </form>
       </div>

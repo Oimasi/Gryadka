@@ -109,7 +109,7 @@ export default function Profile({ user, onNavigate }) {
           </div>
         </section>  
       </div>
-      <div className="mt-69 max-w-[1300px] justify-center items-center mx-auto"> 
+      <div className="mt-69 max-w-[1300px] pl-5 pr-5 lg:pl-0 lg:pr-0 justify-center items-center mx-auto"> 
         <Footer />
       </div>
     </div>

@@ -30,21 +30,21 @@ export default function LoginForm({ onSuccess, setMsg, onNavigate }) {
   }
 
   return (
-    <div className="min-h-screen w-full p-0 bg-[#3E8D43] flex justify-center items-center">
+    <div className="min-h-screen w-full p-0 bg-white md:bg-[#3E8D43] flex justify-center items-center">
       <button onClick={() => onNavigate("main")} className="absolute top-10 left-10 cursor-pointer">
         <img src={back} alt="Назад" className="w-[10px] h-[18px]" />
       </button>
-      <div className="rounded-full absolute left-auto top-28 px-4 py-2 bg-[#D9D9D9]/40">
-        <p className="text-white">Gryadka ID</p>
+      <div className="rounded-full absolute left-auto top-10 md:top-28 px-4 py-2 bg-[#D9D9D9]/40">
+        <p className="md:text-white text-black/40">Gryadka ID</p>
       </div>
-      <div className="bg-white p-10 sm:p-15 ml-5 mr-5 rounded-[30px] shadow-md max-w-[518px] w-full">
+      <div className="bg-white p-2 sm:p-15 ml-5 mr-5 rounded-[30px] shadow-none md:shadow-md max-w-[518px] w-full">
         <form onSubmit={submit} className="justify-center items-center w-full">
           <img src={logo} className="w-[62px] h-[50px] justify-center items-center mx-auto mb-5"/>
-          <p className="text-[28px] text-center font-medium">Авторизация</p>
+          <p className="text-[24px] md:text-[28px] text-center font-medium">Авторизация</p>
           <p className="text-[#7D7D7D] text-center text-[15px] md:text-[17px]">Пожалуйста, войдите в аккаунт</p>
 
           <div className="flex flex-col w-full max-w-[390px] mt-6">
-            <label htmlFor="email" className="mb-1 text-[16px] text-black">
+            <label htmlFor="email" className="mb-1 text-[15px] md:text-[16px] text-black">
               Почта
             </label>
             <input
@@ -59,7 +59,7 @@ export default function LoginForm({ onSuccess, setMsg, onNavigate }) {
           </div>
 
           <div className="flex flex-col w-full max-w-[390px] mt-3">
-            <label htmlFor="email" className="mb-1 text-[16px] text-black">
+            <label htmlFor="email" className="mb-1 text-[15px] md:text-[16px] text-black">
               Пароль
             </label>
             <input
@@ -73,12 +73,12 @@ export default function LoginForm({ onSuccess, setMsg, onNavigate }) {
             />
           </div>
 
-          <div className="row w-full max-w-[390px] mt-4">
+          <div className="row w-full max-w-[390px] mb-3 mt-4">
             <button className="w-full h-[48px] bg-black hover:bg-[#3C7D40] active:bg-[#3C7D40] transition-all duration-150 text-white cursor-pointer rounded-lg" type="submit" disabled={loading}>Войти</button>
           </div>
 
           <div className="text-center pt-3">
-            <span className="text-[#7D7D7D]">Еще нет аккаунта? <a className="text-black hover:text-black/60 active:text-black/60 cursor-pointer transition-all duration-100" onClick={() => onNavigate("register")}>Зарегистрироваться</a></span>
+            <span className="text-[#7D7D7D] text-[13px] md:text-[15px]">Еще нет аккаунта? <a className="text-black hover:text-black/60 active:text-black/60 cursor-pointer transition-all duration-100" onClick={() => onNavigate("register")}>Зарегистрироваться</a></span>
           </div>
         </form>
       </div>

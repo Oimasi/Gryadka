@@ -3,11 +3,13 @@ import ProductCard from "./ProductCard";
 import { getProducts, getMyProducts } from "../../api";
 import Dropdown from "../ui/dropdown";
 import { Footer } from "./Footer";
+import arrow from "/images/arrow.svg"
 
 export default function ProductsList({
   q,
   user,
   categoryFilterActive = false,
+  onNavigate,
   category,
   onOpen,
   onEdit,
@@ -73,9 +75,14 @@ export default function ProductsList({
   return (
     <div>
       <div className="bg-white flex flex-col gap-4 max-w-[1330px] my-4 mx-auto px-4">
-        <h2 className="text-xl font-semibold text-black">
-          {(category && categoryFilterActive) ? category : "Все товары"}
-        </h2>
+        <div className="flex flex-row">
+          <div className="mr-3 cursor-pointer" onClick={() => onNavigate("main")}>
+            <img src={arrow} className="mt-2 rotate-180 ml-1.5 mb-6 w-[17px] h-[12px]" />
+          </div>
+          <h2 className="text-xl font-semibold text-black">
+            {(category && categoryFilterActive) ? category : "Все товары"}
+          </h2>
+        </div>
 
         <div className="flex flex-row justify-between">
           <Dropdown
@@ -91,7 +98,7 @@ export default function ProductsList({
         ) : list.length === 0 ? (
           <div>Не найдены</div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 mt-6 gap-6 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-6 gap-6 w-full">
             {list.map((p) => (
               <ProductCard
                 key={p.id}
@@ -105,7 +112,7 @@ export default function ProductsList({
           </div>
         )}
       </div>
-      <div className="max-w-[1300px] justify-center items-center mx-auto">
+      <div className="max-w-[1300px] lg:pl-0 lg:pr-0 pl-5 pr-5 justify-center items-center mx-auto">
         <Footer />
       </div>
     </div>

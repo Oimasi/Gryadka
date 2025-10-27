@@ -134,7 +134,7 @@ export default function App() {
         onDelete={p => handleDelete(p)}
       />}
 
-      {page === "categories" && <Categories onSelectCategory={handleSelectCategory} />}
+      {page === "categories" && <Categories onNavigate={navigate} onSelectCategory={handleSelectCategory} />}
 
       {page === "login" && <LoginForm onNavigate={navigate} setMsg={setMsg} onSuccess={() => { loadMe(); setPage("main"); }} />}
 
@@ -144,11 +144,12 @@ export default function App() {
         onOpen={p => openProductView(p)}
         onEdit={p => openEditProduct(p)}
         onDelete={p => handleDelete(p)}
+        onNavigate={navigate}
       />}
 
       {page == "cart" && <CartPage onNavigate={navigate} onCheckout={(cart) => { navigate("checkout") }} />}
 
-      {page == "faqs" && <Fags />}
+      {page == "faqs" && <Fags onNavigate={navigate} />}
 
       {page === "checkout" && <CheckoutPage onNavigate={navigate} />}
 
@@ -171,7 +172,7 @@ export default function App() {
         />
       )}
 
-      {page === "create_farm" && user && user.role === "farmer" && <CreateFarm user={user} onDone={() => setPage("all")} setMsg={setMsg} />}
+      {page === "create_farm" && user && user.role === "farmer" && <CreateFarm user={user} onDone={() => setPage("all")} onCancel={() => setPage("my")} setMsg={setMsg} />}
 
       {page === "product_details" && openProduct && <ProductDetails onNavigate={navigate} productId={openProduct.id} onClose={() => setPage("all")} setMsg={setMsg} />}
 

@@ -1,20 +1,26 @@
 import React from "react";
 import image1 from "/images/image1.png";
 import image2 from "/images/image2.png";
+import arrow from "/images/arrow.svg";
 import image3 from "/images/image3.png";
 import image4 from "/images/image4.png";
 import image5 from "/images/image5.png";
 import image6 from "/images/image6.png";
 import berries from "/images/berries.png";
 
-export default function Categories({ onSelectCategory }) {
+export default function Categories({ onSelectCategory, onNavigate }) {
   const handleClick = (name) => {
     if (onSelectCategory) onSelectCategory(name);
   };
 
   return (
     <div className="bg-white flex flex-col gap-4 max-w-[1330px] my-4 mx-auto px-4">
-      <h2 className="text-xl font-semibold text-black">Все категории</h2>
+      <div className="flex flex-row">
+        <div className="mr-3 cursor-pointer" onClick={() => onNavigate("main")}>
+          <img src={arrow} className="mt-2 rotate-180 ml-1.5 mb-6 w-[17px] h-[12px]" />
+        </div>
+        <h2 className="text-xl font-semibold text-black">Все категории</h2>
+      </div>
       <section className="mt-5">
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
           <div onClick={() => handleClick("Овощи")} className="w-full h-[217px] bg-white rounded-[20px] flex flex-col justify-between text-left p-[27px] border border-[#e7e7e7] transition-all duration-150 active:bg-[#f5f5f5]/60 hover:bg-[#f5f5f5]/60 cursor-pointer">

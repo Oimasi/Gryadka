@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import logo from "/images/logotype.png"
 import marker from "/images/marker.svg"
 import search from "/images/search.svg"
@@ -12,6 +12,47 @@ export default function Header({ user, onNavigate, onLogout, query, setQuery, on
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [pressedBurger, setPressedBurger] = useState(false)
+
+  const sliderRef = useRef(null);
+
+  useEffect(() => {
+    const slider = sliderRef.current;
+    if (!slider) return;
+
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    const mouseDown = (e) => {
+      isDown = true;
+      slider.classList.add("active");
+      startX = e.pageX - slider.offsetLeft;
+      scrollLeft = slider.scrollLeft;
+    };
+
+    const mouseUpOrLeave = () => {
+      isDown = false;
+      slider.classList.remove("active");
+    };
+
+    const mouseMove = (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - slider.offsetLeft;
+      const walk = (x - startX) * 1;
+      slider.scrollLeft = scrollLeft - walk;
+    };
+
+    slider.addEventListener("mousedown", mouseDown);
+    window.addEventListener("mouseup", mouseUpOrLeave);
+    window.addEventListener("mousemove", mouseMove);
+
+    return () => {
+      slider.removeEventListener("mousedown", mouseDown);
+      window.removeEventListener("mouseup", mouseUpOrLeave);
+      window.removeEventListener("mousemove", mouseMove);
+    };
+  }, []);  
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -50,41 +91,6 @@ export default function Header({ user, onNavigate, onLogout, query, setQuery, on
 
   return (
     <header className="flex-col flex gap-[15px] justify-between max-w-[1330px] bg-white sticky top-0 z-50 my-[8px] mx-auto p-[16px]">
-      {pressedBurger && (
-        <div
-          key="burger-menu"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[2000] w-screen h-screen bg-white flex flex-col gap-6 p-10">
-            <button className="text-[#2e7433] py-2 px-4 bg-none border-1 border-[#3E8D43] transition-all duration-150 rounded-xl cursor-pointer active:bg-[#3E8D43] active:text-white hover:text-white hover:bg-[#3E8D43]" 
-              onClick={() => {
-                onNavigate("main")
-                setPressedBurger(false)
-              }}>
-                Главная
-            </button>
-            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => {
-                onNavigate("categories")
-                setPressedBurger(false)
-              }}>
-                Все категории
-            </button>
-            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => {
-                onNavigate("all")
-                setPressedBurger(false)
-              }}>
-                Все товары
-            </button>
-            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => {
-                onNavigate("faqs")
-                setPressedBurger(false)
-              }}>
-                FAQ
-            </button>
-        </div>
-      )}
       <div className="border-b-1 border-[#CCCCCC] flex flex-row pb-4 justify-between gap-[20px]">
         <img src={logo} className="w-[46px] h-[33px]" alt="Logo" />
         <div className="hidden flex-row md:flex gap-[15px] w-full justify-between">
@@ -100,7 +106,7 @@ export default function Header({ user, onNavigate, onLogout, query, setQuery, on
         <div className="hidden md:flex w-full max-w-[560px] gap-2 h-[44px] bg-[#F0F0F0] rounded-[63px] px-[15px] items-center">
           <img src={search} className="w-[19px] h-[19px]"/>
           <input
-            className="bg-none w-full max-w-[560px]"
+            className="bg-none w-full max-w-[560px] outline-none"
             placeholder="Поиск"
             value={query}
             onChange={e => setQuery(e.target.value)}
@@ -128,63 +134,30 @@ export default function Header({ user, onNavigate, onLogout, query, setQuery, on
           </div>
         )}   
       </div>
-      
-      
-        <div className="items-center gap-auto flex justify-between flex-row">
-          <div className="md:flex hidden justify-between gap-5">
+        <div className="relative">
+          <div
+            ref={sliderRef}
+            className="overflow-x-auto scrollbar-hide flex flex-row gap-5 items-center whitespace-nowrap"
+          >
             <button className="text-[#2e7433] py-2 px-4 bg-none border-1 border-[#3E8D43] transition-all duration-150 rounded-xl cursor-pointer active:bg-[#3E8D43] active:text-white hover:text-white hover:bg-[#3E8D43]" onClick={() => onNavigate("main")}>
               Главная
             </button>
-            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => onNavigate("categories")}>Все категории</button>
-            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => onNavigate("all")}>Все товары</button>
-            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => onNavigate("faqs")}>FAQ</button>
+            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => onNavigate("categories")}>
+              Все категории
+            </button>
+            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => onNavigate("all")}>
+              Все товары
+            </button>
+            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => onNavigate("faqs")}>
+              FAQ
+            </button>
           </div>
-          <div className="justify-between flex gap-4">
-            {user?.role === "farmer" && (
-              <div>
-                <ProfileDropdown onNavigate={onNavigate} onLogout={onLogout} />
-              </div>
-            )}
-          </div>
-            {isMobile && (
-              <div className="flex">
-                <button
-                  className="flex cursor-pointer ml-auto float-right mr-0 w-10 h-10 text-black items-center justify-center rounded z-[3000]"
-                  aria-pressed={pressedBurger}
-                  onClick={() => setPressedBurger(!pressedBurger)}
-                >
-                  <svg className="w-5 h-5 fill-current" viewBox="0 0 16 16">
-                    <rect
-                      y="7"
-                      width="16"
-                      height="1"
-                      rx="1"
-                      className={`origin-center transition-all duration-300 ${
-                        pressedBurger ? "rotate-45 translate-y-0" : "-translate-y-[5px]"
-                      }`}
-                    />
-                    <rect
-                      y="7"
-                      width="16"
-                      height="1"
-                      rx="1"
-                      className={`origin-center transition-all duration-300 ${
-                        pressedBurger ? "opacity-0" : "opacity-100"
-                      }`}
-                    />
-                    <rect
-                      y="7"
-                      width="16"
-                      height="1"
-                      rx="1"
-                      className={`origin-center transition-all duration-300 ${
-                        pressedBurger ? "-rotate-45 translate-y-[0.1px]" : "translate-y-[5px]"
-                      }`}
-                    />
-                  </svg>
-                </button>
-              </div>
-            )}
+
+          {user?.role === "farmer" && (
+            <div className="hidden md:absolute md:flex right-0 top-0">
+              <ProfileDropdown onNavigate={onNavigate} onLogout={onLogout} />
+            </div>
+          )}
         </div>
     </header>
   );

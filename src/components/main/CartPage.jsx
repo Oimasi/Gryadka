@@ -62,7 +62,7 @@ export default function CartPage({ cartItems: propsCart, onCheckout, onNavigate 
               return (
                 <div key={it.product.id || idx} className="flex flex-col sm:flex-row items-center sm:items-start gap-4 py-4 w-full">
                   <div className="flex flex-row w-full">
-                    <div className="flex flex-row">
+                    <div className="flex-row hidden md:flex">
                       <div className="w-28 h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center">
                         <img 
                           src={(it.product.media?.[0]?.presigned_url) || ""} 
@@ -71,7 +71,7 @@ export default function CartPage({ cartItems: propsCart, onCheckout, onNavigate 
                         />
                       </div>
                     </div>
-                    <div className="flex ml-6 mt-[0px] justify-right w-full flex-col">
+                    <div className="flex ml-0 md:ml-6 mt-[0px] justify-right w-full flex-col">
                       <div className="mb-4 flex flex-row w-full justify-between items-center">
                         <div className="min-w-0">
                           <div className="font-medium text-black">{it.product.name}</div>

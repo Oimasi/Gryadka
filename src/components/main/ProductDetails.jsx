@@ -3,7 +3,7 @@ import { getProduct, fetchImageAsObjectURL, getPassport } from "../../api";
 import discount from "/images/discount.svg"
 import { Footer } from "./Footer";
 import { addItem } from "../../hooks/useCart";
-import arrow from "/images/arrow_gray.svg"
+import arrow from "/images/arrow.svg"
 
 function ratingBadge(value) {
   if (!value) return <span className="inline-block px-2 py-1 rounded-full text-sm bg-gray-200 text-gray-800">—</span>;
@@ -181,8 +181,8 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
     <div className="max-w-[1330px] mx-auto px-4 py-5">
       <div className="flex justify-between items-start mb-4">
         <div className="flex flex-row">
-          <div className="mr-5 cursor-pointer" onClick={() => onNavigate("all")}>
-            <img src={arrow} className="w-2.5" />
+          <div className="mr-3 cursor-pointer" onClick={() => onNavigate("all")}>
+            <img src={arrow} className="mt-1 rotate-180 ml-1.5 mb-6 w-[17px] h-[12px]" />
           </div>
           <h3 className="text-[#A8A8A8]"><span className="text-[#A8A8A8] cursor-pointer" onClick={() => onNavigate("main")}>Главная ·</span> Категории · <span className="text-black">{product.category || "—"}</span></h3>
         </div>
@@ -190,11 +190,11 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
 
       <div className="flex flex-col lg:flex-row w-full gap-8">
         <div className="lg:col-span-7 w-full">
-          <div className="flex-col lg:flex-row flex w-full">
+          <div className="flex-col md:flex-row flex w-full">
             <div className="flex gap-4 w-full">
-              <div className="flex-1 bg-white rounded-[20px] p-6 flex items-center justify-center overflow-hidden lg:pl-8 lg:pr-8">
+              <div className="flex-1 bg-white rounded-[20px] pt-6 pb-6 flex items-center justify-center overflow-hidden md:pr-8">
                 {imgSrc ? (
-                  <img src={imgSrc} alt={product.name} className="w-full h-auto max-h-[720px] object-cover rounded-[16px] shadow-sm" />
+                  <img src={imgSrc} alt={product.name} className="w-full h-auto md:h-[640px] object-cover rounded-[16px]" />
                 ) : (
                   <div className="w-full h-[520px] flex items-center justify-center text-gray-400">{loadingImg ? "Загрузка фотографии..." : "Нет фото"}</div>
                 )}
@@ -404,13 +404,13 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
       </div>
 
       <div className="mt-6">
-        <div className="text-[18px] font-medium text-black">Дополнительные параметры</div>
+        <div className="text-[18px] font-medium mb-6 text-black">Дополнительные параметры</div>
         <div className="grid gap-2">
           {Object.entries(data).filter(([k]) => !sensorKeys.has(k)).length === 0 ? (
             <div className="text-gray-500 text-md mt-2">Нет дополнительных параметров</div>
           ) : (
             Object.entries(data).filter(([k]) => !sensorKeys.has(k)).map(([k, v]) => (
-              <div key={k} className="flex justify-between items-center bg-[#F7F7F7] rounded-[20px] px-6 py-4 w-full">
+              <div key={k} className="flex justify-between items-center bg-[#F7F7F7] gap-4 rounded-[20px] px-6 py-4 w-full">
                 <div className="text-gray-700">{k}</div>
                 <div className="font-medium">{String(v)}</div>
               </div>

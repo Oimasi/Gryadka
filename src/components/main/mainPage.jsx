@@ -171,18 +171,21 @@ export default function MainPage({ q, user, onOpen, onEdit, onNavigate, onDelete
 
 return (
     <div className="max-w-[1330px] my-[8px] mx-auto p-[16px]">
-      <div className="bg-[#3E8D43] flex flex-row h-full min-h-[350px] rounded-[20px] px-[40px] py-[30px] justify-between gap-auto">
+      <div className="bg-[#3E8D43] flex flex-col lg:flex-row h-full min-h-[350px] rounded-[20px] px-[30px] py-[30px] lg:px-[40px] lg:py-[30px] justify-between gap-auto">
         <div className="flex flex-col justify-between gap-auto">
           <div className="flex">
             <p className="text-white/40">Новости</p>
           </div>
+          <div className="flex lg:hidden mt-10">
+            <img src={bg} className="w-[250px] lg:w-[400px] lg:h-[297px] h-[167px]" />
+          </div>
           <div className="flex flex-col gap-3 mt-20 md:mt-0">
-            <p className="font-semibold text-[25px] md:text-[30px] leading-9 text-white">Отслеживайте свежесть <br /> продукции в режиме реального времени</p>
-            <p className="text-[20px] text-white/70">Всё свежее, сезонное и честное —<br /> напрямую от производителя к вам домой.</p>
+            <p className="font-semibold text-[20px] md:text-[30px] leading-7 md:leading-9 text-white">Отслеживайте свежесть <br /> продукции в режиме реального времени</p>
+            <p className="text-[15px] md:text-[18px] text-white/70">Всё свежее, сезонное и честное<br />— напрямую от производителя к вам домой.</p>
           </div>
         </div>
         <div className="hidden lg:flex">
-          <img src={bg} className="w-[400px] h-[297px]" />
+          <img src={bg} className="w-[300px] lg:w-[400px] lg:h-[297px] h-[197px]" />
         </div>
       </div>
 

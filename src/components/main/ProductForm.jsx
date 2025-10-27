@@ -22,22 +22,22 @@ function CertificateItem({ cert, onChange, onRemove }) {
 
       <div style={{ marginBottom: 20 }}>
         <label className="label" htmlFor={`${idBase}-name`}>Название</label>
-        <input id={`${idBase}-name`} name={`cert_name_${cert._uid || ""}`} className="w-full input" value={cert.name || ""} onChange={(e) => onChange({ ...cert, name: e.target.value })} placeholder="" required />
+        <input id={`${idBase}-name`} name={`cert_name_${cert._uid || ""}`} className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={cert.name || ""} onChange={(e) => onChange({ ...cert, name: e.target.value })} placeholder="" required />
       </div>
 
       <div style={{ marginBottom: 20 }}>
         <label className="label" htmlFor={`${idBase}-issuer`}>Выдан</label>
-        <input id={`${idBase}-issuer`} name={`cert_issuer_${cert._uid || ""}`} className="w-full input" value={cert.issuer || ""} onChange={(e) => onChange({ ...cert, issuer: e.target.value })} placeholder="" required />
+        <input id={`${idBase}-issuer`} name={`cert_issuer_${cert._uid || ""}`} className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={cert.issuer || ""} onChange={(e) => onChange({ ...cert, issuer: e.target.value })} placeholder="" required />
       </div>
 
       <div style={{ marginBottom: 20 }}>
         <label className="label" htmlFor={`${idBase}-date`}>Дата</label>
-        <input id={`${idBase}-date`} name={`cert_date_${cert._uid || ""}`} type="date" className="w-full input" value={cert.date || ""} onChange={(e) => onChange({ ...cert, date: e.target.value })} />
+        <input id={`${idBase}-date`} name={`cert_date_${cert._uid || ""}`} type="date" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={cert.date || ""} onChange={(e) => onChange({ ...cert, date: e.target.value })} />
       </div>
 
       <div>
         <label className="label" htmlFor={`${idBase}-notes`}>Примечания</label>
-        <input id={`${idBase}-notes`} name={`cert_notes_${cert._uid || ""}`} className="w-full input" value={cert.notes || ""} onChange={(e) => onChange({ ...cert, notes: e.target.value })} placeholder="" />
+        <input id={`${idBase}-notes`} name={`cert_notes_${cert._uid || ""}`} className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={cert.notes || ""} onChange={(e) => onChange({ ...cert, notes: e.target.value })} placeholder="" />
       </div>
     </div>
   );
@@ -324,17 +324,17 @@ function ProductPassportForm({ passport = null, onChange }) {
 
       <div className="mt-5 row">
         <label className="label" htmlFor="passport-origin">Происхождение</label>
-        <input id="passport-origin" name="passport_origin" className="w-full input" value={safePassport.origin || ""} onChange={(e) => setField({ origin: e.target.value })} placeholder="" />
+        <input id="passport-origin" name="passport_origin" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.origin || ""} onChange={(e) => setField({ origin: e.target.value })} placeholder="" />
       </div>
 
       <div className="mt-5 row">
         <label className="label" htmlFor="passport-variety">Сорт / вид</label>
-        <input id="passport-variety" name="passport_variety" className="w-full input" value={safePassport.variety || ""} onChange={(e) => setField({ variety: e.target.value })} placeholder="" />
+        <input id="passport-variety" name="passport_variety" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.variety || ""} onChange={(e) => setField({ variety: e.target.value })} placeholder="" />
       </div>
 
-      <div className="mt-5 row">
+      <div className="mt-5 mb-5 row">
         <label className="label" htmlFor="passport-harvest">Дата сбора урожая</label>
-        <input id="passport-harvest" name="passport_harvest_date" type="date" className="w-full input" value={safePassport.harvest_date || ""} onChange={(e) => setField({ harvest_date: e.target.value })} />
+        <input id="passport-harvest" name="passport_harvest_date" type="date" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.harvest_date || ""} onChange={(e) => setField({ harvest_date: e.target.value })} />
       </div>
 
       <div className="mb-5">
@@ -376,18 +376,18 @@ function ProductPassportForm({ passport = null, onChange }) {
             <div className="responsive-grid">
               <div className="row mb-5">
                 <label className="label" htmlFor="sensor-avg-ph">Средний pH за время выращивания</label>
-                <input id="sensor-avg-ph" name="sensor_avg_ph" className="w-full input" type="number" step="0.01" value={safePassport.data["Средний pH за время выращивания"] || ""} onChange={(e) => setDataKey("Средний pH за время выращивания", e.target.value)} required />
+                <input id="sensor-avg-ph" name="sensor_avg_ph" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" type="number" step="0.01" value={safePassport.data["Средний pH за время выращивания"] || ""} onChange={(e) => setDataKey("Средний pH за время выращивания", e.target.value)} required />
               </div>
 
               <div className="row mb-5">
                 <label className="label" htmlFor="sensor-ph-out"> % измерений pH вне допустимого диапазона</label>
-                <input id="sensor-ph-out" name="sensor_ph_out_of_range" className="w-full input" type="number" step="0.1" value={safePassport.data["% измерений pH вне допустимого диапазона"] || ""} onChange={(e) => setDataKey("% измерений pH вне допустимого диапазона", e.target.value)} required />
+                <input id="sensor-ph-out" name="sensor_ph_out_of_range" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" type="number" step="0.1" value={safePassport.data["% измерений pH вне допустимого диапазона"] || ""} onChange={(e) => setDataKey("% измерений pH вне допустимого диапазона", e.target.value)} required />
               </div>
             </div>
 
             <div className="row mb-5">
               <label className="label" htmlFor="sensor-ph-rating">Оценка pH</label>
-              <select id="sensor-ph-rating" name="sensor_ph_rating" className="w-full input" value={safePassport.data["Оценка pH"] || ""} onChange={(e) => setDataKey("Оценка pH", e.target.value)} required>
+              <select id="sensor-ph-rating" name="sensor_ph_rating" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Оценка pH"] || ""} onChange={(e) => setDataKey("Оценка pH", e.target.value)} required>
                 <option value="">— выберите —</option>
                 <option value="Хорошая">Хорошая</option>
                 <option value="Средняя">Средняя</option>
@@ -398,17 +398,17 @@ function ProductPassportForm({ passport = null, onChange }) {
             <div className="responsive-grid" style={{ marginTop: 23 }}>
               <div className="row mb-5">
                 <label className="label" htmlFor="sensor-last-salinity">Последняя соленость почвы</label>
-                <input id="sensor-last-salinity" name="sensor_last_salinity" className="w-full input" type="number" step="0.01" value={safePassport.data["Последняя соленость почвы"] || ""} onChange={(e) => setDataKey("Последняя соленость почвы", e.target.value)} />
+                <input id="sensor-last-salinity" name="sensor_last_salinity" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" type="number" step="0.01" value={safePassport.data["Последняя соленость почвы"] || ""} onChange={(e) => setDataKey("Последняя соленость почвы", e.target.value)} />
               </div>
               <div className="row mb-5">
                 <label className="label" htmlFor="sensor-avg-salinity">Средняя соленость почвы за время выращивания</label>
-                <input id="sensor-avg-salinity" name="sensor_avg_salinity" className="w-full input" type="number" step="0.01" value={safePassport.data["Средняя соленость почвы за время выращивания"] || ""} onChange={(e) => setDataKey("Средняя соленость почвы за время выращивания", e.target.value)} />
+                <input id="sensor-avg-salinity" name="sensor_avg_salinity" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" type="number" step="0.01" value={safePassport.data["Средняя соленость почвы за время выращивания"] || ""} onChange={(e) => setDataKey("Средняя соленость почвы за время выращивания", e.target.value)} />
               </div>
             </div>
 
             <div className="row mb-5">
               <label className="label" htmlFor="sensor-salinity-rating">Оценка солености почвы</label>
-              <select id="sensor-salinity-rating" name="sensor_salinity_rating" className="w-full input" value={safePassport.data["Оценка солености почвы"] || ""} onChange={(e) => setDataKey("Оценка солености почвы", e.target.value)}>
+              <select id="sensor-salinity-rating" name="sensor_salinity_rating" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Оценка солености почвы"] || ""} onChange={(e) => setDataKey("Оценка солености почвы", e.target.value)}>
                 <option value="">— выберите —</option>
                 <option value="Хорошая">Хорошая</option>
                 <option value="Средняя">Средняя</option>
@@ -419,11 +419,11 @@ function ProductPassportForm({ passport = null, onChange }) {
             <div className="responsive-grid" style={{ marginTop: 8 }}>
               <div className="row mt-5">
                 <label className="label" htmlFor="sensor-avg-temp">Средняя температура за время выращивания</label>
-                <input id="sensor-avg-temp" name="sensor_avg_temp" className="w-full input" value={safePassport.data["Средняя температура за время выращивания"] || ""} onChange={(e) => setDataKey("Средняя температура за время выращивания", e.target.value)} />
+                <input id="sensor-avg-temp" name="sensor_avg_temp" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Средняя температура за время выращивания"] || ""} onChange={(e) => setDataKey("Средняя температура за время выращивания", e.target.value)} />
               </div>
               <div className="row mt-5">
                 <label className="label" htmlFor="sensor-temp-spikes">Наличие резких перепадов температуры</label>
-                <select id="sensor-temp-spikes" name="sensor_temp_spikes" className="w-full input" value={safePassport.data["Наличие резких перепадов температуры"] || ""} onChange={(e) => setDataKey("Наличие резких перепадов температуры", e.target.value)}>
+                <select id="sensor-temp-spikes" name="sensor_temp_spikes" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Наличие резких перепадов температуры"] || ""} onChange={(e) => setDataKey("Наличие резких перепадов температуры", e.target.value)}>
                   <option value="">— выберите —</option>
                   <option value="Да">Да</option>
                   <option value="Нет">Нет</option>
@@ -436,7 +436,7 @@ function ProductPassportForm({ passport = null, onChange }) {
               <input
                 id="sensor-harvest-time"
                 name="sensor_harvest_time"
-                className="w-full input"
+                className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none"
                 value={harvestDisplay}
                 onChange={handleHarvestChange}
                 onBlur={handleHarvestBlur}
@@ -450,27 +450,27 @@ function ProductPassportForm({ passport = null, onChange }) {
 
             <div className="row mt-5">
               <label className="label" htmlFor="sensor-ph-calibrated">Дата последней калибровки pH-электродов</label>
-              <input id="sensor-ph-calibrated" name="sensor_ph_calibrated" type="date" className="w-full input" value={safePassport.data["Дата последней калибровки pH-электродов"] || ""} onChange={(e) => setDataKey("Дата последней калибровки pH-электродов", e.target.value)} />
+              <input id="sensor-ph-calibrated" name="sensor_ph_calibrated" type="date" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Дата последней калибровки pH-электродов"] || ""} onChange={(e) => setDataKey("Дата последней калибровки pH-электродов", e.target.value)} />
             </div>
 
             <div className="row mt-5 mb-5">
               <label className="label" htmlFor="sensor-coords">Местоположение точки (координаты участка)</label>
-              <input id="sensor-coords" name="sensor_coords" className="w-full input" value={safePassport.data["Местоположение точки ( координаты участка)"] || ""} onChange={(e) => setDataKey("Местоположение точки ( координаты участка)", e.target.value)} placeholder="lat,lon" />
+              <input id="sensor-coords" name="sensor_coords" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Местоположение точки ( координаты участка)"] || ""} onChange={(e) => setDataKey("Местоположение точки ( координаты участка)", e.target.value)} placeholder="lat,lon" />
             </div>
 
             <div className="row mt-5 mb-5">
               <label className="label" htmlFor="sensor-gateway-photo">Фото площадки от шлюза (ссылка / описание)</label>
-              <input id="sensor-gateway-photo" name="sensor_gateway_photo" className="w-full input" value={safePassport.data["Фото площадки от шлюза"] || ""} onChange={(e) => setDataKey("Фото площадки от шлюза", e.target.value)} />
+              <input id="sensor-gateway-photo" name="sensor_gateway_photo" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Фото площадки от шлюза"] || ""} onChange={(e) => setDataKey("Фото площадки от шлюза", e.target.value)} />
             </div>
 
             <div className="row mt-5 mb-5">
               <label className="label" htmlFor="sensor-alerts">Последние значимые алерты</label>
-              <input id="sensor-alerts" name="sensor_alerts" className="w-full input" value={safePassport.data["Последние значимые алерты"] || ""} onChange={(e) => setDataKey("Последние значимые алерты", e.target.value)} />
+              <input id="sensor-alerts" name="sensor_alerts" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Последние значимые алерты"] || ""} onChange={(e) => setDataKey("Последние значимые алерты", e.target.value)} />
             </div>
 
             <div className="row mt-5 mb-5">
               <label className="label" htmlFor="sensor-recommendation">Краткая рекомендация от ИИ</label>
-              <input id="sensor-recommendation" name="sensor_recommendation" className="w-full input" value={safePassport.data["Краткая рекомендация от ИИ"] || ""} onChange={(e) => setDataKey("Краткая рекомендация от ИИ", e.target.value)} />
+              <input id="sensor-recommendation" name="sensor_recommendation" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Краткая рекомендация от ИИ"] || ""} onChange={(e) => setDataKey("Краткая рекомендация от ИИ", e.target.value)} />
             </div>
           </div>
         )}
@@ -487,7 +487,7 @@ function ProductPassportForm({ passport = null, onChange }) {
                
                 <input
                   id={`custom-key-${idx}`}
-                  className="input"
+                  className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none"
                   name={`custom_key_${idx}`}
                   value={k}
                   readOnly
@@ -497,7 +497,7 @@ function ProductPassportForm({ passport = null, onChange }) {
               
                 <input
                   id={`custom-val-${idx}`}
-                  className="input"
+                  className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none"
                   name={`custom_val_${idx}`}
                   value={v}
                   onChange={(e) => setDataKey(k, e.target.value)}
@@ -518,8 +518,8 @@ function ProductPassportForm({ passport = null, onChange }) {
         </div>
 
         <div className="mt-5" style={{ display: "flex", gap: 8 }}>
-          <input id="new-param-key" name="new_param_key" className="flex-1 input" placeholder="Название параметра" value={customKey} onChange={(e) => setCustomKey(e.target.value)} />
-          <input id="new-param-value" name="new_param_value" className="flex-1 input" placeholder="Значение" value={customValue} onChange={(e) => setCustomValue(e.target.value)} />
+          <input id="new-param-key" name="new_param_key" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" placeholder="Название параметра" value={customKey} onChange={(e) => setCustomKey(e.target.value)} />
+          <input id="new-param-value" name="new_param_value" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" placeholder="Значение" value={customValue} onChange={(e) => setCustomValue(e.target.value)} />
           <button type="button" className="btn" onClick={addCustomParam}>Добавить</button>
         </div>
       </div>
@@ -711,21 +711,21 @@ export default function ProductForm({ initial = null, user = null, onDone = null
 
         <div className="mb-5 row">
           <label className="label" htmlFor="product-name">Название</label>
-          <input id="product-name" name="product_name" className="w-full input" value={name} onChange={(e) => setName(e.target.value)} required placeholder="" />
+          <input id="product-name" name="product_name" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={name} onChange={(e) => setName(e.target.value)} required placeholder="" />
         </div>
 
         <div className="mb-5 row">
           <label className="label" htmlFor="product-short">Короткое описание</label>
-          <input id="product-short" name="product_short_description" className="w-full input" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} placeholder="" />
+          <input id="product-short" name="product_short_description" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} placeholder="" />
         </div>
 
         <div className="mb-5 row">
           <label className="label" htmlFor="product-short">Цена</label>
-          <input id="product-short" type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required className="input mb-3"/>
+          <input id="product-short" type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none"/>
 
-          <label className="flex flex-col">
+          <label className="flex flex-col mt-5">
             <label className="label" htmlFor="product-short">Категория</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} required className="border rounded-lg p-2">
+            <select value={category} onChange={(e) => setCategory(e.target.value)} required className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none">
               <option value="">Выберите категорию</option>
               {categories.map((c) => (
                 <option key={c} value={c}>
@@ -738,7 +738,7 @@ export default function ProductForm({ initial = null, user = null, onDone = null
 
         <div className="mb-5 row">
           <label className="label" htmlFor="product-farm">Ферма</label>
-          <select id="product-farm" name="product_farm_id" className="w-full input" value={farmId ?? ""} onChange={(e) => setFarmId(e.target.value)}>
+          <select id="product-farm" name="product_farm_id" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={farmId ?? ""} onChange={(e) => setFarmId(e.target.value)}>
             <option value="">— Выберите ферму —</option>
             {farms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
@@ -746,7 +746,7 @@ export default function ProductForm({ initial = null, user = null, onDone = null
 
         <div className="mb-5 row">
           <label className="label" htmlFor="product-photo">Фото (опционально)</label>
-          <input id="product-photo" name="product_photo" type="file" className="input" onChange={e => setFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)} accept="image/*" />
+          <input id="product-photo" name="product_photo" type="file" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" onChange={e => setFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)} accept="image/*" />
         </div>
 
         <ProductPassportForm passport={passport} onChange={(p) => setPassport(p)} />
