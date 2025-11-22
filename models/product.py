@@ -35,7 +35,7 @@ class Product(Base):
     farm = relationship("Farm", back_populates="products")
 
     is_growing = Column(Boolean, nullable=False, default=False, index=True)
-
+    sensor_devices = relationship("SensorDevice", back_populates="product", cascade="all, delete-orphan")
     __table_args__ = (
         Index("ix_products_owner_active", "owner_id", "is_active"),
     )

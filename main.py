@@ -24,6 +24,7 @@ from utils.auth import create_access_token, get_current_user, ACCESS_TOKEN_EXPIR
 from routers import auth as auth_router
 from routers import products as products_router
 from routers import farms as farms_router  
+from routers import sensors as sensors_router
 from sqlalchemy.orm import relationship
 
 # Настройка логирования
@@ -34,6 +35,7 @@ app = FastAPI(title="Gryadka API")
 
 # Подключение роутера аутентификации
 app.include_router(auth_router.router, prefix="/api")
+app.include_router(sensors_router.router)
 app.include_router(farms_router.router)
 app.include_router(products_router.router)
 if os.getenv("SKIP_CREATE_ALL", "false").lower() != "true":

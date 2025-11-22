@@ -123,6 +123,7 @@ class ProductOut(BaseModel):
     passport: Optional[ProductPassportOut]
     media: List[ProductMediaOut] = []
     is_growing: bool
+    # sensors: List[SensorDeviceOut] = []
 
     class Config:
         orm_mode = True
