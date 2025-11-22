@@ -20,6 +20,7 @@ from schemas.product import (
 )
 from models.user import User as UserModel
 from utils.auth import get_current_user, get_current_user_optional
+from urllib.parse import quote as _urlquote
 
 logger = logging.getLogger("products_router")
 router = APIRouter(prefix="/api/products", tags=["products"])
@@ -170,7 +171,8 @@ def create_product(payload: ProductCreate, current_user: UserModel = Depends(get
         category=payload.category,
         owner_id=current_user.id,
         farm_id=final_farm_id,
-        is_active=bool(getattr(payload, "is_active", True))
+        is_active=bool(getattr(payload, "is_active", True)),
+        is_growing=bool(getattr(payload, "is_growing", False)) 
     )
     db.add(product)
     try:
@@ -341,6 +343,10 @@ def update_product(product_id: int, payload: ProductUpdate, current_user: UserMo
         if field == "owner_id":
             continue
         setattr(product, field, value)
+        changed = True
+        
+    if hasattr(payload, "is_growing") and payload.is_growing is not None:
+        product.is_growing = bool(payload.is_growing)
         changed = True
 
     if changed:
@@ -683,4 +689,21 @@ def serve_media_file(media_id: int, db: Session = Depends(get_db), current_user:
     media_type = media.mime_type or "application/octet-stream"
     filename = getattr(media, "filename", "file")
 
-    return Response(content=content_bytes, media_type=media_type, headers={"Content-Disposition": f'inline; filename="{filename}"'})
+    if filename is None:
+        filename = "file"
+    if isinstance(filename, bytes):
+        try:
+            filename = filename.decode("utf-8")
+        except Exception:
+            filename = filename.decode("latin-1", "ignore")
+
+    # ascii fallback — удаляем символы вне ASCII; если пусто, используем "file"
+    ascii_filename = (filename.encode("ascii", "ignore").decode("ascii") or "file")
+
+    # percent-encode UTF-8 имя для filename* (RFC 5987)
+    quoted_filename = _urlquote(filename, safe="")
+
+    # Формируем Content-Disposition: ASCII-fallback + filename* (UTF-8)
+    content_disp = f'inline; filename="{ascii_filename}"; filename*=UTF-8\'\'{quoted_filename}'
+
+    return Response(content=content_bytes, media_type=media_type, headers={"Content-Disposition": content_disp})

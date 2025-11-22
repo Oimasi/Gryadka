@@ -97,6 +97,7 @@ class ProductCreate(BaseModel):
     farm_id: Optional[int] = None   
     passport: Optional[ProductPassportCreate] = None
     is_active: Optional[bool] = True
+    is_growing: Optional[bool] = False
 
 
 class ProductUpdate(BaseModel):
@@ -106,6 +107,7 @@ class ProductUpdate(BaseModel):
     category: Optional[constr(strip_whitespace=True, min_length=1, max_length=100)] = None
     is_active: Optional[bool] = None
     farm_id: Optional[int] = None   # разрешаем менять farm
+    is_growing: Optional[bool] = None
 
 
 class ProductOut(BaseModel):
@@ -120,6 +122,7 @@ class ProductOut(BaseModel):
     is_active: bool
     passport: Optional[ProductPassportOut]
     media: List[ProductMediaOut] = []
+    is_growing: bool
 
     class Config:
         orm_mode = True

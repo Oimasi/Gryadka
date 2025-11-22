@@ -124,8 +124,8 @@ def register(user_data: user_schema.UserCreate, db: Session = Depends(get_db)):
                     "schema": {
                         "type": "object",
                         "properties": {
-                            "email": {"type": "string", "example": "blik.klik@mail.ru"},
-                            "password": {"type": "string", "example": "Pop20081117."},
+                            "email": {"type": "string", "example": "test.exemple@mail.ru"},
+                            "password": {"type": "string", "example": "ABCabc.123321"},
                         },
                         "required": ["email", "password"],
                     }
@@ -134,8 +134,8 @@ def register(user_data: user_schema.UserCreate, db: Session = Depends(get_db)):
                     "schema": {
                         "type": "object",
                         "properties": {
-                            "email": {"type": "string", "example": "blik.klik@mail.ru"},
-                            "password": {"type": "string", "example": "Pop20081117."},
+                            "email": {"type": "string", "example": "test.exemple@mail.ru"},
+                            "password": {"type": "string", "example": "ABCabc.123321"},
                         },
                         "required": ["email", "password"],
                     }
