@@ -61,7 +61,7 @@ export default function CreateSensorForm({ user, onDone, onCancel, setMsg }) {
       if (data.api_key) {
         setApiKey(data.api_key);
       } else {
-        setMsg("✅ Датчик создан, но API-ключ не получен");
+        setMsg("Датчик создан, но API-ключ не получен");
         onDone?.(data);
       }
     } catch (err) {
@@ -100,23 +100,7 @@ export default function CreateSensorForm({ user, onDone, onCancel, setMsg }) {
             />
           </div>
 
-          <div className="row mb-5">
-            <label className="label" htmlFor="sensor-product">Привязать к продукту *</label>
-            <select
-              id="sensor-product"
-              className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none"
-              value={productId}
-              onChange={(e) => setProductId(e.target.value)}
-              required
-            >
-              <option value="">— Выберите продукт —</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} (ID: {p.id})
-                </option>
-              ))}
-            </select>
-          </div>
+
 
           <div className="flex flex-row max-w-[500px]">
             <button

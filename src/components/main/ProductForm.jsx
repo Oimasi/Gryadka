@@ -6,11 +6,33 @@ import {
   confirmMediaUpload,
   upsertPassport,
   getFarms,
-  getProduct
+  getProduct,
+  readAccessToken
 } from "../../api";
 import { Footer } from "./Footer";
 
 
+function CertificatesSection({ certifications, onAdd, onUpdate, onRemove }) {
+  return (
+    <div className="mt-4">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h5 className="font-semibold text-black text-[20px] mb-5">Сертификаты</h5>
+        <button type="button" className="text-sm text-blue-600" onClick={onAdd}>+ Добавить</button>
+      </div>
+      {(!certifications || certifications.length === 0) && <div className="text-sm text-gray-500 mt-3">Нет сертификатов</div>}
+      {(certifications || []).map((c, i) => (
+        <CertificateItem
+          key={c._uid || i}
+          cert={c}
+          onChange={(updated) => onUpdate(i, updated)}
+          onRemove={() => onRemove(i)}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Компонент для отображения одного сертификата
 function CertificateItem({ cert, onChange, onRemove }) {
   const idBase = cert._uid ? `cert-${cert._uid}` : `cert-${Math.random().toString(36).slice(2, 9)}`;
   return (
@@ -19,32 +41,59 @@ function CertificateItem({ cert, onChange, onRemove }) {
         <p className="font-medium text-black text-[16px] mb-2">Новый сертификат</p>
         <button type="button" className="text-sm text-red-600" onClick={onRemove}>Удалить</button>
       </div>
-
       <div style={{ marginBottom: 20 }}>
         <label className="label" htmlFor={`${idBase}-name`}>Название</label>
-        <input id={`${idBase}-name`} name={`cert_name_${cert._uid || ""}`} className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={cert.name || ""} onChange={(e) => onChange({ ...cert, name: e.target.value })} placeholder="" required />
+        <input 
+          id={`${idBase}-name`} 
+          name={`cert_name_${cert._uid || ""}`} 
+          className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+          value={cert.name || ""} 
+          onChange={(e) => onChange({ ...cert, name: e.target.value })} 
+          placeholder="" 
+          required 
+        />
       </div>
-
       <div style={{ marginBottom: 20 }}>
         <label className="label" htmlFor={`${idBase}-issuer`}>Выдан</label>
-        <input id={`${idBase}-issuer`} name={`cert_issuer_${cert._uid || ""}`} className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={cert.issuer || ""} onChange={(e) => onChange({ ...cert, issuer: e.target.value })} placeholder="" required />
+        <input 
+          id={`${idBase}-issuer`} 
+          name={`cert_issuer_${cert._uid || ""}`} 
+          className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+          value={cert.issuer || ""} 
+          onChange={(e) => onChange({ ...cert, issuer: e.target.value })} 
+          placeholder="" 
+          required 
+        />
       </div>
-
       <div style={{ marginBottom: 20 }}>
         <label className="label" htmlFor={`${idBase}-date`}>Дата</label>
-        <input id={`${idBase}-date`} name={`cert_date_${cert._uid || ""}`} type="date" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={cert.date || ""} onChange={(e) => onChange({ ...cert, date: e.target.value })} />
+        <input 
+          id={`${idBase}-date`} 
+          name={`cert_date_${cert._uid || ""}`} 
+          type="date" 
+          className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+          value={cert.date || ""} 
+          onChange={(e) => onChange({ ...cert, date: e.target.value })} 
+        />
       </div>
-
       <div>
         <label className="label" htmlFor={`${idBase}-notes`}>Примечания</label>
-        <input id={`${idBase}-notes`} name={`cert_notes_${cert._uid || ""}`} className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={cert.notes || ""} onChange={(e) => onChange({ ...cert, notes: e.target.value })} placeholder="" />
+        <input 
+          id={`${idBase}-notes`} 
+          name={`cert_notes_${cert._uid || ""}`} 
+          className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+          value={cert.notes || ""} 
+          onChange={(e) => onChange({ ...cert, notes: e.target.value })} 
+          placeholder="" 
+        />
       </div>
     </div>
   );
 }
-function ProductPassportForm({ passport = null, onChange }) {
-  const safePassport = passport || { origin: "", variety: "", harvest_date: "", certifications: [], data: {} };
 
+// Компонент формы паспорта товара
+function ProductPassportForm({ passport = null, onChange, onAddCertificate, onUpdateCertificate, onRemoveCertificate }) {
+  const safePassport = passport || { origin: "", variety: "", harvest_date: "", certifications: [], data: {} };
   const RESERVED_SENSOR_KEYS = [
     "Есть датчики",
     "Средний pH за время выращивания",
@@ -63,7 +112,7 @@ function ProductPassportForm({ passport = null, onChange }) {
     "Последние значимые алерты",
     "Краткая рекомендация от ИИ"
   ];
-
+  
   const genUid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
   useEffect(() => {
@@ -73,7 +122,6 @@ function ProductPassportForm({ passport = null, onChange }) {
       const arr = (passport.certifications || []).map(c => c._uid ? c : { ...c, _uid: genUid() });
       onChange && onChange({ ...safePassport, certifications: arr });
     }
-    
   }, []); 
 
   const setField = (changes) => onChange && onChange({ ...safePassport, ...changes });
@@ -86,7 +134,7 @@ function ProductPassportForm({ passport = null, onChange }) {
   };
 
   const sensorsEnabled = Boolean((safePassport.data || {})["Есть датчики"]);
-
+  
   const enableSensorsDefaults = () => {
     const d = { ...(safePassport.data || {}) };
     if (d["Есть датчики"]) return;
@@ -116,31 +164,14 @@ function ProductPassportForm({ passport = null, onChange }) {
     onChange && onChange({ ...safePassport, data: d });
   };
 
-  const addCertificate = () => {
-    const newCert = { _uid: genUid(), name: "", issuer: "", date: "", notes: "" };
-    const arr = [...(safePassport.certifications || []), newCert];
-    onChange && onChange({ ...safePassport, certifications: arr });
-  };
-  const updateCertificate = (i, cert) => {
-    const arr = [...(safePassport.certifications || [])];
-    arr[i] = cert;
-    onChange && onChange({ ...safePassport, certifications: arr });
-  };
-  const removeCertificate = (i) => {
-    const arr = (safePassport.certifications || []).filter((_, idx) => idx !== i);
-    onChange && onChange({ ...safePassport, certifications: arr });
-  };
-
   const [customKey, setCustomKey] = useState("");
   const [customValue, setCustomValue] = useState("");
-
-
   const [harvestDisplay, setHarvestDisplay] = useState(() => {
     const v = (safePassport.data || {})["Время сбора урожая"] || "";
     return formatHarvestForDisplay(v);
   });
   const [harvestError, setHarvestError] = useState("");
-
+  
   useEffect(() => {
     const v = (safePassport.data || {})["Время сбора урожая"] || "";
     setHarvestDisplay(formatHarvestForDisplay(v));
@@ -149,6 +180,7 @@ function ProductPassportForm({ passport = null, onChange }) {
   function pad(n) {
     return (n < 10 ? "0" : "") + n;
   }
+
   function formatIsoToDDMMYYYYHHMM(val) {
     try {
       const d = new Date(val);
@@ -158,9 +190,11 @@ function ProductPassportForm({ passport = null, onChange }) {
       return val;
     }
   }
+
   function looksLikeDDMMYYYYHHMM(s) {
     return /^\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2}$/.test(s);
   }
+
   function parseDDMMYYYYHHMMToIso(s) {
     const m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})$/);
     if (!m) return null;
@@ -173,6 +207,7 @@ function ProductPassportForm({ passport = null, onChange }) {
     if (isNaN(d.getTime())) return null;
     return d.toISOString();
   }
+
   function formatHarvestForDisplay(val) {
     if (!val) return "";
     if (looksLikeDDMMYYYYHHMM(val)) return val;
@@ -185,9 +220,7 @@ function ProductPassportForm({ passport = null, onChange }) {
     return val;
   }
 
-
   function maskDigitsToDisplay(rawDigits) {
-   
     const d = rawDigits.slice(0, 12);
     const parts = [];
     if (d.length >= 2) {
@@ -200,64 +233,46 @@ function ProductPassportForm({ passport = null, onChange }) {
     } else if (d.length > 2) {
       parts.push(d.slice(2));
     }
-    
     if (d.length >= 8) {
       parts.push(d.slice(4,8));
     } else if (d.length > 4) {
       parts.push(d.slice(4));
     }
-  
     if (d.length >= 10) {
       parts.push(d.slice(8,10));
     } else if (d.length > 8) {
       parts.push(d.slice(8));
     }
-    
     if (d.length === 12) {
       parts.push(d.slice(10,12));
     } else if (d.length > 10) {
       parts.push(d.slice(10));
     }
-
-   
     let display = "";
     if (parts.length > 0) {
       display += parts[0]; 
     }
     if (d.length >= 3) {
       display += "." + (parts[1] || "");
-    } else if (d.length >= 3) {
-      display += "." + (parts[1] || "");
     }
     if (d.length >= 5) {
-      display += "." + (parts[2] || "");
-    } else if (d.length > 4) {
       display += "." + (parts[2] || "");
     }
     if (d.length >= 9) {
       display += " " + (parts[3] || "");
-    } else if (d.length > 8) {
-      display += " " + (parts[3] || "");
     }
     if (d.length >= 11) {
       display += ":" + (parts[4] || "");
-    } else if (d.length > 10) {
-      display += ":" + (parts[4] || "");
     }
-
     return display;
   }
 
-  
   const handleHarvestChange = (e) => {
     const raw = e.target.value || "";
-   
     const digits = raw.replace(/\D/g, "").slice(0, 12);
     const display = maskDigitsToDisplay(digits);
     setHarvestDisplay(display);
-
     if (digits.length === 12) {
-      
       const dd = digits.slice(0,2);
       const mm = digits.slice(2,4);
       const yyyy = digits.slice(4,8);
@@ -269,18 +284,15 @@ function ProductPassportForm({ passport = null, onChange }) {
         setDataKey("Время сбора урожая", iso);
         setHarvestError("");
       } else {
-        
         setDataKey("Время сбора урожая", "");
         setHarvestError("Неверная дата/время");
       }
     } else {
-      
       setDataKey("Время сбора урожая", "");
       setHarvestError("Введите полностью в формате дд.мм.гггг чч:мм");
     }
   };
 
- 
   const handleHarvestBlur = () => {
     if (looksLikeDDMMYYYYHHMM(harvestDisplay)) {
       const iso = parseDDMMYYYYHHMMToIso(harvestDisplay);
@@ -297,7 +309,6 @@ function ProductPassportForm({ passport = null, onChange }) {
       else setHarvestError("");
     }
   };
- 
 
   const addCustomParam = () => {
     const key = (customKey || "").trim();
@@ -321,38 +332,46 @@ function ProductPassportForm({ passport = null, onChange }) {
   return (
     <div className="mt-6 max-w-[1330px] w-full rounded-xl">
       <h4 className="font-semibold text-black text-[20px] mb-4">Паспорт товара</h4>
-
       <div className="mt-5 row">
         <label className="label" htmlFor="passport-origin">Происхождение</label>
-        <input id="passport-origin" name="passport_origin" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.origin || ""} onChange={(e) => setField({ origin: e.target.value })} placeholder="" />
+        <input 
+          id="passport-origin" 
+          name="passport_origin" 
+          className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+          value={safePassport.origin || ""} 
+          onChange={(e) => setField({ origin: e.target.value })} 
+          placeholder="" 
+        />
       </div>
-
       <div className="mt-5 row">
         <label className="label" htmlFor="passport-variety">Сорт / вид</label>
-        <input id="passport-variety" name="passport_variety" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.variety || ""} onChange={(e) => setField({ variety: e.target.value })} placeholder="" />
+        <input 
+          id="passport-variety" 
+          name="passport_variety" 
+          className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+          value={safePassport.variety || ""} 
+          onChange={(e) => setField({ variety: e.target.value })} 
+          placeholder="" 
+        />
       </div>
-
       <div className="mt-5 mb-5 row">
         <label className="label" htmlFor="passport-harvest">Дата сбора урожая</label>
-        <input id="passport-harvest" name="passport_harvest_date" type="date" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.harvest_date || ""} onChange={(e) => setField({ harvest_date: e.target.value })} />
+        <input 
+          id="passport-harvest" 
+          name="passport_harvest_date" 
+          type="date" 
+          className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+          value={safePassport.harvest_date || ""} 
+          onChange={(e) => setField({ harvest_date: e.target.value })} 
+        />
       </div>
-
-      <div className="mb-5">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h5 className="font-semibold text-black text-[20px] mb-5">Сертификаты</h5>
-          <button type="button" className="text-sm text-blue-600" onClick={addCertificate}>+ Добавить</button>
-        </div>
-
-        {(!safePassport.certifications || safePassport.certifications.length === 0) && <div className="text-sm text-gray-500 mt-3">Нет сертификатов</div>}
-        {(safePassport.certifications || []).map((c, i) => (
-          <CertificateItem
-            key={c._uid || i}
-            cert={c}
-            onChange={(updated) => updateCertificate(i, updated)}
-            onRemove={() => removeCertificate(i)}
-          />
-        ))}
-      </div>
+      
+      <CertificatesSection 
+        certifications={safePassport.certifications || []} 
+        onAdd={onAddCertificate}
+        onUpdate={onUpdateCertificate}
+        onRemove={onRemoveCertificate}
+      />
 
       <div className="mb-4 pt-4">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -369,68 +388,119 @@ function ProductPassportForm({ passport = null, onChange }) {
             />
           </div>
         </div>
-
-
         {sensorsEnabled && (
           <div className="sensor-area">
             <div className="responsive-grid">
               <div className="row mb-5">
                 <label className="label" htmlFor="sensor-avg-ph">Средний pH за время выращивания</label>
-                <input id="sensor-avg-ph" name="sensor_avg_ph" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" type="number" step="0.01" value={safePassport.data["Средний pH за время выращивания"] || ""} onChange={(e) => setDataKey("Средний pH за время выращивания", e.target.value)} required />
+                <input 
+                  id="sensor-avg-ph" 
+                  name="sensor_avg_ph" 
+                  className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+                  type="number" 
+                  step="0.01" 
+                  value={safePassport.data["Средний pH за время выращивания"] || ""} 
+                  onChange={(e) => setDataKey("Средний pH за время выращивания", e.target.value)} 
+                  required 
+                />
               </div>
-
               <div className="row mb-5">
                 <label className="label" htmlFor="sensor-ph-out"> % измерений pH вне допустимого диапазона</label>
-                <input id="sensor-ph-out" name="sensor_ph_out_of_range" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" type="number" step="0.1" value={safePassport.data["% измерений pH вне допустимого диапазона"] || ""} onChange={(e) => setDataKey("% измерений pH вне допустимого диапазона", e.target.value)} required />
+                <input 
+                  id="sensor-ph-out" 
+                  name="sensor_ph_out_of_range" 
+                  className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+                  type="number" 
+                  step="0.1" 
+                  value={safePassport.data["% измерений pH вне допустимого диапазона"] || ""} 
+                  onChange={(e) => setDataKey("% измерений pH вне допустимого диапазона", e.target.value)} 
+                  required 
+                />
               </div>
             </div>
-
             <div className="row mb-5">
               <label className="label" htmlFor="sensor-ph-rating">Оценка pH</label>
-              <select id="sensor-ph-rating" name="sensor_ph_rating" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Оценка pH"] || ""} onChange={(e) => setDataKey("Оценка pH", e.target.value)} required>
+              <select 
+                id="sensor-ph-rating" 
+                name="sensor_ph_rating" 
+                className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+                value={safePassport.data["Оценка pH"] || ""} 
+                onChange={(e) => setDataKey("Оценка pH", e.target.value)} 
+                required
+              >
                 <option value="">— выберите —</option>
                 <option value="Хорошая">Хорошая</option>
                 <option value="Средняя">Средняя</option>
                 <option value="Плохая">Плохая</option>
               </select>
             </div>
-
             <div className="responsive-grid" style={{ marginTop: 23 }}>
               <div className="row mb-5">
                 <label className="label" htmlFor="sensor-last-salinity">Последняя соленость почвы</label>
-                <input id="sensor-last-salinity" name="sensor_last_salinity" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" type="number" step="0.01" value={safePassport.data["Последняя соленость почвы"] || ""} onChange={(e) => setDataKey("Последняя соленость почвы", e.target.value)} />
+                <input 
+                  id="sensor-last-salinity" 
+                  name="sensor_last_salinity" 
+                  className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+                  type="number" 
+                  step="0.01" 
+                  value={safePassport.data["Последняя соленость почвы"] || ""} 
+                  onChange={(e) => setDataKey("Последняя соленость почвы", e.target.value)} 
+                />
               </div>
               <div className="row mb-5">
                 <label className="label" htmlFor="sensor-avg-salinity">Средняя соленость почвы за время выращивания</label>
-                <input id="sensor-avg-salinity" name="sensor_avg_salinity" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" type="number" step="0.01" value={safePassport.data["Средняя соленость почвы за время выращивания"] || ""} onChange={(e) => setDataKey("Средняя соленость почвы за время выращивания", e.target.value)} />
+                <input 
+                  id="sensor-avg-salinity" 
+                  name="sensor_avg_salinity" 
+                  className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+                  type="number" 
+                  step="0.01" 
+                  value={safePassport.data["Средняя соленость почвы за время выращивания"] || ""} 
+                  onChange={(e) => setDataKey("Средняя соленость почвы за время выращивания", e.target.value)} 
+                />
               </div>
             </div>
-
             <div className="row mb-5">
               <label className="label" htmlFor="sensor-salinity-rating">Оценка солености почвы</label>
-              <select id="sensor-salinity-rating" name="sensor_salinity_rating" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Оценка солености почвы"] || ""} onChange={(e) => setDataKey("Оценка солености почвы", e.target.value)}>
+              <select 
+                id="sensor-salinity-rating" 
+                name="sensor_salinity_rating" 
+                className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+                value={safePassport.data["Оценка солености почвы"] || ""} 
+                onChange={(e) => setDataKey("Оценка солености почвы", e.target.value)}
+              >
                 <option value="">— выберите —</option>
                 <option value="Хорошая">Хорошая</option>
                 <option value="Средняя">Средняя</option>
                 <option value="Плохая">Плохая</option>
               </select>
             </div>
-
             <div className="responsive-grid" style={{ marginTop: 8 }}>
               <div className="row mt-5">
                 <label className="label" htmlFor="sensor-avg-temp">Средняя температура за время выращивания</label>
-                <input id="sensor-avg-temp" name="sensor_avg_temp" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Средняя температура за время выращивания"] || ""} onChange={(e) => setDataKey("Средняя температура за время выращивания", e.target.value)} />
+                <input 
+                  id="sensor-avg-temp" 
+                  name="sensor_avg_temp" 
+                  className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+                  value={safePassport.data["Средняя температура за время выращивания"] || ""} 
+                  onChange={(e) => setDataKey("Средняя температура за время выращивания", e.target.value)} 
+                />
               </div>
               <div className="row mt-5">
                 <label className="label" htmlFor="sensor-temp-spikes">Наличие резких перепадов температуры</label>
-                <select id="sensor-temp-spikes" name="sensor_temp_spikes" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Наличие резких перепадов температуры"] || ""} onChange={(e) => setDataKey("Наличие резких перепадов температуры", e.target.value)}>
+                <select 
+                  id="sensor-temp-spikes" 
+                  name="sensor_temp_spikes" 
+                  className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+                  value={safePassport.data["Наличие резких перепадов температуры"] || ""} 
+                  onChange={(e) => setDataKey("Наличие резких перепадов температуры", e.target.value)}
+                >
                   <option value="">— выберите —</option>
                   <option value="Да">Да</option>
                   <option value="Нет">Нет</option>
                 </select>
               </div>
             </div>
-
             <div className="row mt-5">
               <label className="label" htmlFor="sensor-harvest-time">Время сбора урожая (по данным)</label>
               <input
@@ -444,47 +514,70 @@ function ProductPassportForm({ passport = null, onChange }) {
                 aria-describedby="harvest-error"
                 aria-label="Время сбора урожая в формате дд.мм.гггг чч:мм"
               />
-             
               {harvestError ? <div id="harvest-error" className="text-xs text-red-600 mt-1">{harvestError}</div> : null}
             </div>
-
             <div className="row mt-5">
               <label className="label" htmlFor="sensor-ph-calibrated">Дата последней калибровки pH-электродов</label>
-              <input id="sensor-ph-calibrated" name="sensor_ph_calibrated" type="date" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Дата последней калибровки pH-электродов"] || ""} onChange={(e) => setDataKey("Дата последней калибровки pH-электродов", e.target.value)} />
+              <input 
+                id="sensor-ph-calibrated" 
+                name="sensor_ph_calibrated" 
+                type="date" 
+                className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+                value={safePassport.data["Дата последней калибровки pH-электродов"] || ""} 
+                onChange={(e) => setDataKey("Дата последней калибровки pH-электродов", e.target.value)} 
+              />
             </div>
-
             <div className="row mt-5 mb-5">
               <label className="label" htmlFor="sensor-coords">Местоположение точки (координаты участка)</label>
-              <input id="sensor-coords" name="sensor_coords" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Местоположение точки ( координаты участка)"] || ""} onChange={(e) => setDataKey("Местоположение точки ( координаты участка)", e.target.value)} placeholder="lat,lon" />
+              <input 
+                id="sensor-coords" 
+                name="sensor_coords" 
+                className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+                value={safePassport.data["Местоположение точки ( координаты участка)"] || ""} 
+                onChange={(e) => setDataKey("Местоположение точки ( координаты участка)", e.target.value)} 
+                placeholder="lat,lon" 
+              />
             </div>
-
             <div className="row mt-5 mb-5">
               <label className="label" htmlFor="sensor-gateway-photo">Фото площадки от шлюза (ссылка / описание)</label>
-              <input id="sensor-gateway-photo" name="sensor_gateway_photo" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Фото площадки от шлюза"] || ""} onChange={(e) => setDataKey("Фото площадки от шлюза", e.target.value)} />
+              <input 
+                id="sensor-gateway-photo" 
+                name="sensor_gateway_photo" 
+                className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+                value={safePassport.data["Фото площадки от шлюза"] || ""} 
+                onChange={(e) => setDataKey("Фото площадки от шлюза", e.target.value)} 
+              />
             </div>
-
             <div className="row mt-5 mb-5">
               <label className="label" htmlFor="sensor-alerts">Последние значимые алерты</label>
-              <input id="sensor-alerts" name="sensor_alerts" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Последние значимые алерты"] || ""} onChange={(e) => setDataKey("Последние значимые алерты", e.target.value)} />
+              <input 
+                id="sensor-alerts" 
+                name="sensor_alerts" 
+                className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+                value={safePassport.data["Последние значимые алерты"] || ""} 
+                onChange={(e) => setDataKey("Последние значимые алерты", e.target.value)} 
+              />
             </div>
-
             <div className="row mt-5 mb-5">
               <label className="label" htmlFor="sensor-recommendation">Краткая рекомендация от ИИ</label>
-              <input id="sensor-recommendation" name="sensor_recommendation" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={safePassport.data["Краткая рекомендация от ИИ"] || ""} onChange={(e) => setDataKey("Краткая рекомендация от ИИ", e.target.value)} />
+              <input 
+                id="sensor-recommendation" 
+                name="sensor_recommendation" 
+                className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+                value={safePassport.data["Краткая рекомендация от ИИ"] || ""} 
+                onChange={(e) => setDataKey("Краткая рекомендация от ИИ", e.target.value)} 
+              />
             </div>
           </div>
         )}
       </div>
-
       <div className="mt-4">
         <h6 className="text-sm font-medium mb-5">Дополнительные параметры (пользовательские)</h6>
-
         <div className="space-y-2">
           {Object.entries(safePassport.data || {})
             .filter(([k]) => !RESERVED_SENSOR_KEYS.includes(k))
             .map(([k, v], idx) => (
               <div key={k} style={{ display: "flex", gap: 8, alignItems: "center", minWidth: 0 }}>
-               
                 <input
                   id={`custom-key-${idx}`}
                   className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none"
@@ -494,7 +587,6 @@ function ProductPassportForm({ passport = null, onChange }) {
                   aria-readonly
                   style={{ flexBasis: "66%", flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                 />
-              
                 <input
                   id={`custom-val-${idx}`}
                   className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none"
@@ -516,10 +608,23 @@ function ProductPassportForm({ passport = null, onChange }) {
             ))
           }
         </div>
-
         <div className="mt-5" style={{ display: "flex", gap: 8 }}>
-          <input id="new-param-key" name="new_param_key" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" placeholder="Название параметра" value={customKey} onChange={(e) => setCustomKey(e.target.value)} />
-          <input id="new-param-value" name="new_param_value" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" placeholder="Значение" value={customValue} onChange={(e) => setCustomValue(e.target.value)} />
+          <input 
+            id="new-param-key" 
+            name="new_param_key" 
+            className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+            placeholder="Название параметра" 
+            value={customKey} 
+            onChange={(e) => setCustomKey(e.target.value)} 
+          />
+          <input 
+            id="new-param-value" 
+            name="new_param_value" 
+            className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+            placeholder="Значение" 
+            value={customValue} 
+            onChange={(e) => setCustomValue(e.target.value)} 
+          />
           <button type="button" className="btn" onClick={addCustomParam}>Добавить</button>
         </div>
       </div>
@@ -531,6 +636,7 @@ const getInitialPrice = (initial) => {
   if (!initial) return "";
   return initial.price ?? initial.price_value ?? (initial.price && initial.price.amount) ?? "";
 };
+
 
 export default function ProductForm({ initial = null, user = null, onDone = null, onCancel = null, setMsg = null }) {
   const [name, setName] = useState(initial?.name || "");
@@ -546,11 +652,42 @@ export default function ProductForm({ initial = null, user = null, onDone = null
     certifications: Array.isArray(initial.passport.certifications) ? initial.passport.certifications.map(c => ({ ...c })) : [],
     data: { ...(initial.passport.data || {}) }
   } : { origin: "", variety: "", harvest_date: "", certifications: [], data: {} });
+  const [isGrowing, setIsGrowing] = useState(initial?.is_growing || false);
+  const [sensors, setSensors] = useState([]);
+  const [selectedSensor, setSelectedSensor] = useState(null);
   const [passportSaving, setPassportSaving] = useState(false);
   const [price, setPrice] = useState(getInitialPrice(initial));
   const [category, setCategory] = useState(
     initial?.category ?? initial?.category_name ?? initial?.category_id ?? ""
   );
+  
+  // Генерация уникального ID для сертификатов
+  const genUid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  // Функции для управления сертификатами
+  const addCertificate = () => {
+    const newCert = { _uid: genUid(), name: "", issuer: "", date: "", notes: "" };
+    setPassport(prev => ({
+      ...prev,
+      certifications: [...(prev.certifications || []), newCert]
+    }));
+  };
+
+  const updateCertificate = (index, updatedCert) => {
+    setPassport(prev => {
+      const certifications = [...(prev.certifications || [])];
+      certifications[index] = updatedCert;
+      return { ...prev, certifications };
+    });
+  };
+
+  const removeCertificate = (index) => {
+    setPassport(prev => {
+      const certifications = [...(prev.certifications || [])];
+      certifications.splice(index, 1);
+      return { ...prev, certifications };
+    });
+  };
 
   const categories = [
     "Овощи",
@@ -578,6 +715,29 @@ export default function ProductForm({ initial = null, user = null, onDone = null
     }
     loadFarms();
   }, [user]);
+
+  useEffect(() => {
+    const loadSensors = async () => {
+      try {
+        const res = await fetch("/api/sensors/devices", {
+          headers: { "Authorization": `Bearer ${readAccessToken()}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSensors(data || []);
+          
+          // Если редактируем существующий продукт с привязанным датчиком
+          if (initial?.id && initial?.sensor_devices?.length > 0) {
+            setSelectedSensor(initial.sensor_devices[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load sensors", err);
+      }
+    };
+    
+    loadSensors();
+  }, [initial]);
 
   useEffect(() => {
     if (initial?.passport) {
@@ -610,150 +770,279 @@ export default function ProductForm({ initial = null, user = null, onDone = null
   }
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    setMsg && setMsg(null);
-    setLoading(true);
-
-    try {
-      if (passport && passport.data && passport.data["Время сбора урожая"]) {
-        const val = passport.data["Время сбора урожая"];
-        if (typeof val === "string" && /^[0-9]{2}\.[0-9]{2}\.[0-9]{4}\s[0-9]{2}:[0-9]{2}$/.test(val)) {
-          const m = val.match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})$/);
-          if (m) {
-            const dd = parseInt(m[1], 10);
-            const mm = parseInt(m[2], 10) - 1;
-            const yyyy = parseInt(m[3], 10);
-            const hh = parseInt(m[4], 10);
-            const min = parseInt(m[5], 10);
-            const d = new Date(yyyy, mm, dd, hh, min);
-            if (!isNaN(d.getTime())) {
-              passport.data["Время сбора урожая"] = d.toISOString();
-            } else {
-              passport.data["Время сбора урожая"] = "";
-            }
+  e.preventDefault();
+  setMsg && setMsg(null);
+  setLoading(true);
+  try {
+    // Создаем копию passport для безопасного изменения
+    const passportCopy = { ...passport, data: { ...(passport.data || {}) } };
+    
+    // Обработка даты "Время сбора урожая"
+    if (passportCopy.data && passportCopy.data["Время сбора урожая"]) {
+      const val = passportCopy.data["Время сбора урожая"];
+      if (typeof val === "string" && /^[0-9]{2}\.[0-9]{2}\.[0-9]{4}\s[0-9]{2}:[0-9]{2}$/.test(val)) {
+        const m = val.match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})$/);
+        if (m) {
+          const dd = parseInt(m[1], 10);
+          const mm = parseInt(m[2], 10) - 1; // месяцы в JS начинаются с 0
+          const yyyy = parseInt(m[3], 10);
+          const hh = parseInt(m[4], 10);
+          const min = parseInt(m[5], 10);
+          const d = new Date(yyyy, mm, dd, hh, min);
+          if (!isNaN(d.getTime())) {
+            passportCopy.data["Время сбора урожая"] = d.toISOString();
+          } else {
+            passportCopy.data["Время сбора урожая"] = "";
           }
         }
       }
-
-      const priceNum = price !== "" ? Number(price) : null;
-      const pricePayload = {};
-      if (priceNum != null && !Number.isNaN(priceNum)) {
-        pricePayload.price = priceNum; 
-        pricePayload.price_value = priceNum; 
-        pricePayload.price_cents = Math.round(priceNum * 100);
-      }
-
-      const payload = {
-        name,
-        short_description: shortDescription,
-        farm_id: farmId || null,
-        category: category || undefined,
-        ...pricePayload
-      };
-
-      let resultProduct = null;
-      let res;
-
-      if (initial && initial.id) {
-        res = await updateProduct(initial.id, payload);
-        console.log("UPDATE product response:", res);
-        if (!res || !res.ok) throw new Error(res?.data?.detail || "Ошибка обновления товара");
-        resultProduct = res.data;
-      } else {
-        res = await createProduct(payload);
-        console.log("CREATE product response:", res);
-        if (!res || !res.ok || !res.data?.id) {
-          throw new Error(res?.data?.detail || "Ошибка создания товара");
-        }
-        resultProduct = res.data;
-      }
-
-      try {
-        const full = await getProduct(resultProduct.id);
-        console.log("GET full product after create/update:", full);
-        if (full && full.ok && full.data) resultProduct = full.data;
-      } catch (errGet) {
-        console.warn("Не удалось получить полный продукт после создания/обновления:", errGet);
-      }
-
-      await savePassportToAPI(resultProduct.id);
-
-      if (file) {
-        try {
-          const up = await uploadProductMediaDirect(resultProduct.id, file, true);
-          if (!up || up.ok === false) throw new Error(up?.data?.detail || "Ошибка загрузки файла");
-          const objectKey = up.data?.object_key;
-          const confirm = await confirmMediaUpload(resultProduct.id, { object_key: objectKey, is_primary: true, mime_type: file.type, meta: {} });
-          if (!confirm || !confirm.ok) throw new Error(confirm?.data?.detail || "Ошибка подтверждения медиа");
-        } catch (err) {
-          console.warn("media upload error", err);
-          setMsg && setMsg("Товар создан, но не удалось загрузить фото: " + (err.message || err));
-          setLoading(false);
-          onDone && onDone(resultProduct);
-          return;
-        }
-      }
-
-      setMsg && setMsg(initial ? "Товар обновлён" : "Товар создан");
-      onDone && onDone(resultProduct);
-    } catch (err) {
-      console.error("handleSubmit error:", err);
-      setMsg && setMsg(err.message || String(err));
-    } finally {
-      setLoading(false);
     }
+    
+    const priceNum = price !== "" ? Number(price) : null;
+    const pricePayload = {};
+    if (priceNum != null && !Number.isNaN(priceNum)) {
+      pricePayload.price = priceNum; 
+      pricePayload.price_value = priceNum; 
+      pricePayload.price_cents = Math.round(priceNum * 100);
+    }
+    
+    // Формируем payload с паспортом
+    const payload = {
+      name,
+      short_description: shortDescription,
+      farm_id: farmId || null,
+      category: category || undefined,
+      is_growing: isGrowing,
+      passport: {
+        origin: passportCopy.origin || null,
+        variety: passportCopy.variety || null,
+        harvest_date: passportCopy.harvest_date || null,
+        certifications: passportCopy.certifications || [],
+        data: passportCopy.data || {}
+      },
+      ...pricePayload
+    };
+    
+    // Если товар растет и выбран датчик, добавляем его в payload
+    if (isGrowing && selectedSensor) {
+      payload.sensor_id = selectedSensor;
+    }
+    
+    let resultProduct = null;
+    let res;
+    if (initial && initial.id) {
+      res = await updateProduct(initial.id, payload);
+      console.log("UPDATE product response:", res);
+      if (!res || !res.ok) throw new Error(res?.data?.detail || "Ошибка обновления товара");
+      resultProduct = res.data;
+    } else {
+      res = await createProduct(payload);
+      console.log("CREATE product response:", res);
+      if (!res || !res.ok || !res.data?.id) {
+        throw new Error(res?.data?.detail || "Ошибка создания товара");
+      }
+      resultProduct = res.data;
+    }
+    
+    try {
+      const full = await getProduct(resultProduct.id);
+      console.log("GET full product after create/update:", full);
+      if (full && full.ok && full.data) resultProduct = full.data;
+    } catch (errGet) {
+      console.warn("Не удалось получить полный продукт после создания/обновления:", errGet);
+    }
+    
+    // Загрузка фото
+    if (file) {
+      try {
+        const up = await uploadProductMediaDirect(resultProduct.id, file, true);
+        if (!up || up.ok === false) throw new Error(up?.data?.detail || "Ошибка загрузки файла");
+        const objectKey = up.data?.object_key;
+        const confirm = await confirmMediaUpload(resultProduct.id, { 
+          object_key: objectKey, 
+          is_primary: true, 
+          mime_type: file.type, 
+          meta: {} 
+        });
+        if (!confirm || !confirm.ok) throw new Error(confirm?.data?.detail || "Ошибка подтверждения медиа");
+      } catch (err) {
+        console.warn("media upload error", err);
+        setMsg && setMsg("Товар создан, но не удалось загрузить фото: " + (err.message || err));
+        setLoading(false);
+        onDone && onDone(resultProduct);
+        return;
+      }
+    }
+    
+    setMsg && setMsg(initial ? "Товар обновлён" : "Товар создан");
+    onDone && onDone(resultProduct);
+  } catch (err) {
+    console.error("handleSubmit error:", err);
+    setMsg && setMsg(err.message || String(err));
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <div>
       <form className="p-7 border-1 border-gray-200 w-full rounded-3xl justify-center mx-auto max-w-[1300px]" onSubmit={handleSubmit} noValidate>
         <h2 className="text-xl font-semibold mb-4">{initial ? "Редактировать товар" : "Создать товар"}</h2>
-
         <div className="mb-5 row">
           <label className="label" htmlFor="product-name">Название</label>
-          <input id="product-name" name="product_name" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={name} onChange={(e) => setName(e.target.value)} required placeholder="" />
+          <input 
+            id="product-name" 
+            name="product_name" 
+            className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+            value={name} 
+            onChange={(e) => setName(e.target.value)} 
+            required 
+            placeholder="" 
+          />
         </div>
-
         <div className="mb-5 row">
           <label className="label" htmlFor="product-short">Короткое описание</label>
-          <input id="product-short" name="product_short_description" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} placeholder="" />
+          <input 
+            id="product-short" 
+            name="product_short_description" 
+            className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+            value={shortDescription} 
+            onChange={(e) => setShortDescription(e.target.value)} 
+            placeholder="" 
+          />
         </div>
-
         <div className="mb-5 row">
-          <label className="label" htmlFor="product-short">Цена</label>
-          <input id="product-short" type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none"/>
-
-          <label className="flex flex-col mt-5">
-            <label className="label" htmlFor="product-short">Категория</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} required className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none">
-              <option value="">Выберите категорию</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </label>
+          <label className="label" htmlFor="price-field">Цена</label>
+          <input 
+            id="price-field" 
+            type="number" 
+            min="0" 
+            step="0.01" 
+            value={price} 
+            onChange={(e) => setPrice(e.target.value)} 
+            required 
+            className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none"
+          />
         </div>
-
+        <div className="mb-5 row">
+          <label className="label" htmlFor="category-field">Категория</label>
+          <select 
+            id="category-field"
+            value={category} 
+            onChange={(e) => setCategory(e.target.value)} 
+            required 
+            className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none"
+          >
+            <option value="">Выберите категорию</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="mb-5 row">
           <label className="label" htmlFor="product-farm">Ферма</label>
-          <select id="product-farm" name="product_farm_id" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" value={farmId ?? ""} onChange={(e) => setFarmId(e.target.value)}>
+          <select 
+            id="product-farm" 
+            name="product_farm_id" 
+            className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+            value={farmId ?? ""} 
+            onChange={(e) => setFarmId(e.target.value)}
+          >
             <option value="">— Выберите ферму —</option>
             {farms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
         </div>
-
         <div className="mb-5 row">
           <label className="label" htmlFor="product-photo">Фото (опционально)</label>
-          <input id="product-photo" name="product_photo" type="file" className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" onChange={e => setFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)} accept="image/*" />
+          <input 
+            id="product-photo" 
+            name="product_photo" 
+            type="file" 
+            className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
+            onChange={e => setFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)} 
+            accept="image/*" 
+          />
+        </div>
+        
+        <div className="mb-5 row">
+          <label className="flex items-center cursor-pointer">
+            <div className="relative">
+              <input 
+                type="checkbox" 
+                checked={isGrowing}
+                onChange={(e) => setIsGrowing(e.target.checked)}
+                className="sr-only" 
+              />
+              <div className={`block w-12 h-6 rounded-full ${isGrowing ? 'bg-[#3E8D43]' : 'bg-gray-300'}`}></div>
+              <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${isGrowing ? 'transform translate-x-6' : ''}`}></div>
+            </div>
+            <div className="ml-3 text-gray-700 font-medium">
+              {isGrowing ? "Товар еще растет" : "Товар уже собран"}
+            </div>
+          </label>
         </div>
 
-        <ProductPassportForm passport={passport} onChange={(p) => setPassport(p)} />
-
+        {isGrowing ? (
+          <div className="mt-6">
+            <h4 className="font-semibold text-black text-[20px] mb-4">Привязать датчик</h4>
+            <div className="row mb-5">
+              <label className="label" htmlFor="sensor-select">Выберите датчик для мониторинга</label>
+              <select 
+                id="sensor-select"
+                className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none"
+                value={selectedSensor || ''}
+                onChange={(e) => setSelectedSensor(e.target.value)}
+              >
+                <option value="">Выберите датчик</option>
+                {sensors.map(sensor => (
+                  <option key={sensor.id} value={sensor.id}>
+                    {sensor.name} {sensor.is_active ? '(активен)' : '(неактивен)'}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-sm text-gray-500">
+                Выберите датчик для отслеживания параметров роста растения. После сбора урожая данные будут перенесены в паспорт товара.
+              </p>
+            </div>
+            
+            {/* Сертификаты всё ещё доступны */}
+            <CertificatesSection 
+              certifications={passport?.certifications || []} 
+              onAdd={addCertificate}
+              onUpdate={updateCertificate}
+              onRemove={removeCertificate}
+            />
+          </div>
+        ) : (
+          <ProductPassportForm 
+            passport={passport} 
+            onChange={(p) => setPassport(p)} 
+            onAddCertificate={addCertificate}
+            onUpdateCertificate={updateCertificate}
+            onRemoveCertificate={removeCertificate}
+          />
+        )}
+        
         <div className="mt-7 flex flex-row max-w-[500px]">
-          <button className="py-2.5 px-4 text-[#3E8D43] hover:text-[#ffffff] active:text-[#ffffff] font-medium hover:bg-[#3E8D43] w-full transition-all duration-200 active:bg-[#2EA727] rounded-[10px] float-left cursor-pointer bg-[#3E8D43]/17" type="submit" disabled={loading || passportSaving}>{loading ? "Сохранение..." : (initial ? "Сохранить" : "Создать")}</button>
-          {onCancel && <button type="button" className="w-full px-4 py-2 rounded-lg bg-gray-200 float-left mr-auto hover:bg-gray-100 cursor-pointer active:bg-gray-100 transition-all duration-200" style={{ marginLeft: 8 }} onClick={onCancel}>Отмена</button>}
+          <button 
+            className="py-2.5 px-4 text-[#3E8D43] hover:text-[#ffffff] active:text-[#ffffff] font-medium hover:bg-[#3E8D43] w-full transition-all duration-200 active:bg-[#2EA727] rounded-[10px] float-left cursor-pointer bg-[#3E8D43]/17" 
+            type="submit" 
+            disabled={loading || passportSaving}
+          >
+            {loading ? "Сохранение..." : (initial ? "Сохранить" : "Создать")}
+          </button>
+          {onCancel && (
+            <button 
+              type="button" 
+              className="w-full px-4 py-2 rounded-lg bg-gray-200 float-left mr-auto hover:bg-gray-100 cursor-pointer active:bg-gray-100 transition-all duration-200" 
+              style={{ marginLeft: 8 }} 
+              onClick={onCancel}
+            >
+              Отмена
+            </button>
+          )}
         </div>
       </form>
       <div className="mt-15">
