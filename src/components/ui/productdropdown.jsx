@@ -40,6 +40,7 @@ export default function ProductDropdown({ product, user, onOpen, onEdit, onDelet
                             }} className="w-full text-left px-3 py-2 text-sm text-red-700 hover:bg-red-50 rounded-lg">
                                 Удалить
                             </button>
+                            
                         </div>
                     )}
                 </div>

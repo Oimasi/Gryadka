@@ -6,26 +6,21 @@ import ProductDropdown from "../ui/productdropdown";
 
 export default function ProductCard({ product, user, onOpen, onEdit, onDelete, variant = "" }) {
   const isNews = variant === "news";
-
   const primary = (product.media && product.media.find(m => m.is_primary)) || null;
   const thumbPresigned = primary ? primary.presigned_url : null;
   const mediaId = primary ? primary.id : null;
-
   const [imgSrc, setImgSrc] = useState(thumbPresigned || null);
   const [loadingImg, setLoadingImg] = useState(false);
   const [qty, setQty] = useState(0);
-
   const rawPrice = product.price ?? null;
   const priceVal = rawPrice != null ? Number(rawPrice) : null;
   const priceStr = priceVal != null ? `${priceVal.toLocaleString("ru-RU")} ₽` : "100₽";
-
   const stock = product.stock ?? product.quantity ?? product.available ?? null;
   const inStock = stock == null ? true : stock > 0;
 
   useEffect(() => {
     let mounted = true;
     let objectUrl = null;
-
     async function loadFallback() {
       if (thumbPresigned) {
         if (mounted) setImgSrc(thumbPresigned);
@@ -35,7 +30,6 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete, v
         if (mounted) setImgSrc(null);
         return;
       }
-
       if (mounted) setLoadingImg(true);
       try {
         const obj = await fetchImageAsObjectURL(`/api/products/media/${mediaId}/file`);
@@ -55,9 +49,7 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete, v
         if (mounted) setLoadingImg(false);
       }
     }
-
     loadFallback();
-
     return () => {
       mounted = false;
       if (objectUrl) {
@@ -112,7 +104,19 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete, v
           {product.farm_name || "ФермаЗаповедъ"}
         </p>
 
-        <div className="absolute right-3 top-3">
+        {product.is_growing != null && (
+          <span
+            className={`absolute right-3 top-2 inline-block text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-full ${
+              product.is_growing
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-green-100 text-green-700'
+            }`}
+          >
+            {product.is_growing ? 'Растёт' : 'Готов'}
+          </span>
+        )}
+
+        <div className="absolute right-3 top-8">
           <ProductDropdown product={product} user={user} onOpen={onOpen} onEdit={onEdit} onDelete={onDelete}/>
         </div>
       </div>
@@ -133,7 +137,6 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete, v
             >
               {product.name || "Без названия"}
             </h3>
-
             <div className="flex flex-row items-baseline mt-1">
               <p className={`${isNews ? 'text-[#3E8D43] text-[13px] sm:text-[16px]' : 'text-[#3E8D43] text-[16px] sm:text-[18px]'} font-medium`}>
                 {priceStr}
@@ -141,7 +144,6 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete, v
               <p className={`${isNews ? 'text-[#A6A6A6] text-[11px]' : 'text-[#A6A6A6] text-[13px]'} font-medium ml-1`}>кг</p>
             </div>
           </div>
-
           <div className="mt-3 flex justify-end ml-auto">
             {qty === 0 ? (
               <button
@@ -172,7 +174,6 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete, v
             )}
           </div>
         </div>
-
         <div className="mt-2"></div>
       </div>
     </div>

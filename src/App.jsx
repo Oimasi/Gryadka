@@ -16,6 +16,7 @@ import CheckoutPage from "./components/main/CheckoutPage";
 import Categories from "./components/main/Categories";
 import SuccessPage from "./components/main/Success";
 import Fags from "./components/main/Faqs";
+import CreateSensorForm from "./components/main/CreateSensorForm";
 
 export default function App() {
   // Состояния приложения
@@ -158,6 +159,17 @@ export default function App() {
           user={user}
           onDone={(p) => { setMsg("✅ Товар создан"); setPage("product_details"); setOpenProduct(p); }}
           onCancel={() => setPage("all")}
+          setMsg={setMsg}
+        />
+      )}
+      {page === "create_sensor" && user && user.role === "farmer" && (
+        <CreateSensorForm
+          user={user}
+          onDone={() => {
+            setMsg("Датчик создан");
+            setPage("my");
+          }}
+          onCancel={() => setPage("my")}
           setMsg={setMsg}
         />
       )}
