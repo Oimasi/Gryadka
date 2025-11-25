@@ -216,7 +216,7 @@ def get_sensor_device(
     """
     Получение информации о конкретном датчике.
     """
-    if current_user.role not in ["admin", "farmer"]:
+    if current_user.role not in ["admin", "farmer", "consumer"]: # упс
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admins and farmers can view sensor details"
