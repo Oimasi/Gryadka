@@ -11,6 +11,8 @@ from uuid import uuid4
 from datetime import datetime
 from fastapi import Response
 from database.database import get_db
+from models.sensor import SensorDevice
+from schemas.sensor import SensorDeviceOut
 from models.product import Product, ProductPassport, ProductMedia
 from models.farm import Farm
 from schemas.product import (
@@ -183,6 +185,20 @@ def create_product(payload: ProductCreate, current_user: UserModel = Depends(get
         logger.exception("Failed to create product: %s", exc)
         raise HTTPException(status_code=500, detail="Database error on create")
     
+    if hasattr(payload, "sensor_id") and payload.sensor_id is not None:
+        try:
+            sensor = db.query(SensorDevice).filter(SensorDevice.id == payload.sensor_id).first()
+            if sensor:
+                sensor.product_id = product.id
+                db.commit()
+                db.refresh(sensor)
+                logger.info(f"Sensor {sensor.id} successfully assigned to product {product.id}")
+            else:
+                logger.warning(f"Sensor with ID {payload.sensor_id} not found for product {product.id}")
+        except Exception as exc:
+            db.rollback()
+            logger.exception("Failed to assign sensor to product: %s", exc)
+
     passport_payload = getattr(payload, "passport", None)
     if passport_payload is not None:
         try:
@@ -245,8 +261,17 @@ def create_product(payload: ProductCreate, current_user: UserModel = Depends(get
         farm_obj = db.query(Farm).filter(Farm.id == final_farm_id).first()
     product.farm_name = farm_obj.name if farm_obj else None
 
+    # После создания продукта
+    if payload.sensor_id:
+        sensor = db.query(SensorDevice).filter(SensorDevice.id == payload.sensor_id).first()
+        if sensor:
+            sensor.product_id = product.id
+            db.commit()
+            db.refresh(sensor)
+    
     try:
         db.refresh(product)
+        db.refresh(product.sensor_devices)
     except Exception:
         pass
 
@@ -296,7 +321,11 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     Returns:
         ProductOut: Данные продукта.
     """
-    product = db.query(Product).options(joinedload(Product.media), joinedload(Product.farm)).filter(Product.id == product_id, Product.is_active == True).first()
+    product = db.query(Product).options(
+        joinedload(Product.media), 
+        joinedload(Product.farm),
+        joinedload(Product.sensor_devices)  
+    ).filter(Product.id == product_id, Product.is_active == True).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     for m in product.media:

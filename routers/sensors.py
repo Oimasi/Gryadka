@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 import logging
 from datetime import datetime, timedelta
-
+import pytz
 from database.database import get_db
 from models.sensor import SensorDevice, SensorReading
 from schemas.sensor import (
@@ -26,8 +26,13 @@ from models.user import User as UserModel
 logger = logging.getLogger("sensors_router")
 router = APIRouter(prefix="/api/sensors", tags=["sensors"])
 
-# Rate limiting: не чаще чем раз в 10 минут для одного датчика
-MIN_READING_INTERVAL = timedelta(minutes=10)
+# Пока минута для теста, потом 10 надо сделать 
+MIN_READING_INTERVAL = timedelta(minutes=1)
+
+def get_moscow_time():
+    moscow_tz = pytz.timezone('Europe/Moscow')
+    return datetime.now(moscow_tz).replace(tzinfo=None)
+
 
 @router.post("/readings", response_model=SensorReadingOut, status_code=201)
 def create_sensor_reading(
@@ -48,33 +53,35 @@ def create_sensor_reading(
             detail="Invalid sensor API key"
         )
     
-    # 2. Проверка rate limiting
+    # 2. Проверка rate limiting (используем московское время)
+    current_time = get_moscow_time()
     last_reading = db.query(SensorReading).filter(
         SensorReading.device_id == sensor.id
     ).order_by(SensorReading.created_at.desc()).first()
     
-    if last_reading and (datetime.utcnow() - last_reading.created_at) < MIN_READING_INTERVAL:
+    if last_reading and (current_time - last_reading.created_at) < MIN_READING_INTERVAL:
         logger.warning(f"Rate limit exceeded for sensor {sensor.id}")
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=f"Readings can be submitted no more than once every {MIN_READING_INTERVAL.total_seconds()//60} minutes"
         )
     
-    # 3. Валидация данных. Я делмаю это в бд, но лучше отловить тут на всякий
+    # 3. Валидация данных
     if payload.temperature is not None and not (-50 <= payload.temperature <= 100):
         raise HTTPException(status_code=400, detail="Invalid temperature value")
     
     if payload.ph is not None and not (0 <= payload.ph <= 14):
         raise HTTPException(status_code=400, detail="Invalid pH value")
     
-    # 4. Создание записи
+    # 4. Создание записи 
     reading = SensorReading(
         device_id=sensor.id,
         temperature=payload.temperature,
         ph=payload.ph,
         salinity=payload.salinity,
         humidity=payload.humidity,
-        raw_data=payload.raw_data
+        raw_data=payload.raw_data,
+        created_at=current_time  
     )
     
     db.add(reading)
@@ -89,7 +96,7 @@ def create_sensor_reading(
             detail="Failed to save sensor reading"
         )
     
-    logger.info(f"Sensor reading saved for device {sensor.id}")
+    logger.info(f"Sensor reading saved for device {sensor.id} at {current_time}")
     return reading
 
 @router.post("/devices", response_model=SensorDeviceOut, status_code=201)
@@ -123,17 +130,19 @@ def register_sensor_device(
                 detail="You can only register sensors for your own products"
             )
     
-    # Генерация уникального API-ключа
+    # Генерация API-ключа
     import secrets
     api_key = f"sensor_{secrets.token_urlsafe(32)}"
     api_key_hash = hash_api_key(api_key)
     
-    # Создание датчика
+    # Создание датчика 
+    current_time = get_moscow_time()
     sensor = SensorDevice(
         name=payload.name,
         api_key_hash=api_key_hash,
         product_id=payload.product_id,
-        is_active=True
+        is_active=True,
+        created_at=current_time  
     )
     
     db.add(sensor)
@@ -186,11 +195,14 @@ def list_sensor_devices(
         
         query = query.filter(SensorDevice.product_id == product_id)
     
-    # Для фермеров - только их датчики
     if current_user.role == "farmer":
         from models.product import Product
+        # Изменил логику что бы отдавать не привзанные датчики 
         farmer_products = db.query(Product.id).filter(Product.owner_id == current_user.id).subquery()
-        query = query.filter(SensorDevice.product_id.in_(farmer_products))
+        query = query.filter(
+            (SensorDevice.product_id.in_(farmer_products)) | 
+            (SensorDevice.product_id.is_(None))
+        )
     
     sensors = query.order_by(SensorDevice.created_at.desc()).all()
     return sensors
@@ -251,15 +263,15 @@ def toggle_sensor_device(
 @router.get("/devices/{device_id}/readings", response_model=List[SensorReadingOut])
 def get_sensor_readings(
     device_id: int,
-    limit: int = 100,
+    limit: int = 15000,
     hours: Optional[int] = 24,
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Получение показаний датчика за указанный период.
+    Получение показаний датчика за указанный период (используем московское время для фильтрации).
     """
-    if current_user.role not in ["admin", "farmer"]:
+    if current_user.role not in ["admin", "farmer", "consumer"]: # во время тестов было только для админов, поправил
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admins and farmers can view sensor readings"
@@ -277,16 +289,16 @@ def get_sensor_readings(
                 detail="You can only view readings for your own sensors"
             )
     
-    # Фильтрация по времени
+    # Фильтрация по времени 
     query = db.query(SensorReading).filter(SensorReading.device_id == device_id)
     
     if hours:
-        since = datetime.utcnow() - timedelta(hours=hours)
+        current_time = get_moscow_time()
+        since = current_time - timedelta(hours=hours)
         query = query.filter(SensorReading.created_at >= since)
     
     readings = query.order_by(SensorReading.created_at.desc()).limit(limit).all()
     return readings
-
 
 @router.post("/devices/{device_id}/assign-product/{product_id}")
 def assign_sensor_to_product(
@@ -295,8 +307,7 @@ def assign_sensor_to_product(
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # Проверка прав (только админ или владелец продукта)
-    # Логика привязки датчика к продукту
+
     sensor.product_id = product_id
     db.commit()
     return {"status": "success"}

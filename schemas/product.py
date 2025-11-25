@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, validator, constr
 from typing import Optional, List, Dict, Any, Union
 from datetime import datetime, date
 from decimal import Decimal
+from schemas.sensor import SensorDeviceOut
 
 CertItem = Dict[str, Any]  # { "name": str, "issuer": str, "date": "YYYY-MM-DD", "notes": Optional[str] }
 
@@ -98,6 +99,7 @@ class ProductCreate(BaseModel):
     passport: Optional[ProductPassportCreate] = None
     is_active: Optional[bool] = True
     is_growing: Optional[bool] = False
+    sensor_id: Optional[int] = None
 
 
 class ProductUpdate(BaseModel):
@@ -123,7 +125,7 @@ class ProductOut(BaseModel):
     passport: Optional[ProductPassportOut]
     media: List[ProductMediaOut] = []
     is_growing: bool
-    # sensors: List[SensorDeviceOut] = []
+    sensor_devices: List[SensorDeviceOut] = []
 
     class Config:
         orm_mode = True
