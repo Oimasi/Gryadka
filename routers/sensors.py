@@ -20,7 +20,7 @@ from schemas.sensor import (
     SensorDeviceOut
 )
 from utils.sensor_auth import verify_sensor_api_key, hash_api_key
-from utils.auth import get_current_user
+from utils.auth import get_current_user, get_current_user_optional
 from models.user import User as UserModel
 
 logger = logging.getLogger("sensors_router")
@@ -165,19 +165,12 @@ def register_sensor_device(
 @router.get("/devices", response_model=List[SensorDeviceOut])
 def list_sensor_devices(
     product_id: Optional[int] = None,
-    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Список датчиков (только для админов и фермеров).
+    Список датчиков 
     Можно фильтровать по product_id.
     """
-    if current_user.role not in ["admin", "farmer"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins and farmers can view sensors"
-        )
-    
     query = db.query(SensorDevice)
     
     # Фильтрация по продукту
@@ -187,22 +180,7 @@ def list_sensor_devices(
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
         
-        if current_user.role == "farmer" and product.owner_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only view sensors for your own products"
-            )
-        
         query = query.filter(SensorDevice.product_id == product_id)
-    
-    if current_user.role == "farmer":
-        from models.product import Product
-        # Изменил логику что бы отдавать не привзанные датчики 
-        farmer_products = db.query(Product.id).filter(Product.owner_id == current_user.id).subquery()
-        query = query.filter(
-            (SensorDevice.product_id.in_(farmer_products)) | 
-            (SensorDevice.product_id.is_(None))
-        )
     
     sensors = query.order_by(SensorDevice.created_at.desc()).all()
     return sensors
@@ -210,29 +188,14 @@ def list_sensor_devices(
 @router.get("/devices/{device_id}", response_model=SensorDeviceOut)
 def get_sensor_device(
     device_id: int,
-    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Получение информации о конкретном датчике.
+    Получение информации о конкретном датчике 
     """
-    if current_user.role not in ["admin", "farmer", "consumer"]: # упс
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins and farmers can view sensor details"
-        )
-    
     sensor = db.query(SensorDevice).filter(SensorDevice.id == device_id).first()
     if not sensor:
         raise HTTPException(status_code=404, detail="Sensor not found")
-    
-    # Проверка прав доступа для фермеров
-    if current_user.role == "farmer":
-        if sensor.product and sensor.product.owner_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only view sensors for your own products"
-            )
     
     return sensor
 
@@ -265,29 +228,15 @@ def get_sensor_readings(
     device_id: int,
     limit: int = 15000,
     hours: Optional[int] = 24,
-    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Получение показаний датчика за указанный период (используем московское время для фильтрации).
+    Получение показаний датчика за указанный период 
+    Используем московское время для фильтрации.
     """
-    if current_user.role not in ["admin", "farmer", "consumer"]: # во время тестов было только для админов, поправил
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins and farmers can view sensor readings"
-        )
-    
     sensor = db.query(SensorDevice).filter(SensorDevice.id == device_id).first()
     if not sensor:
         raise HTTPException(status_code=404, detail="Sensor not found")
-    
-    # Проверка прав доступа для фермеров
-    if current_user.role == "farmer":
-        if sensor.product and sensor.product.owner_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only view readings for your own sensors"
-            )
     
     # Фильтрация по времени 
     query = db.query(SensorReading).filter(SensorReading.device_id == device_id)
@@ -307,7 +256,31 @@ def assign_sensor_to_product(
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-
+    """
+    Привязка датчика к продукту (только для админов и фермеров).
+    """
+    if current_user.role not in ["admin", "farmer"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins and farmers can assign sensors to products"
+        )
+    
+    sensor = db.query(SensorDevice).filter(SensorDevice.id == device_id).first()
+    if not sensor:
+        raise HTTPException(status_code=404, detail="Sensor not found")
+    
+    # Проверка прав на продукт для фермеров
+    if current_user.role == "farmer":
+        from models.product import Product
+        product = db.query(Product).filter(Product.id == product_id).first()
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        if product.owner_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only assign sensors to your own products"
+            )
+    
     sensor.product_id = product_id
     db.commit()
     return {"status": "success"}
