@@ -4,6 +4,7 @@ import discount from "/images/discount.svg";
 import { Footer } from "./Footer";
 import { addItem } from "../../hooks/useCart";
 import arrow from "/images/arrow.svg";
+
 function ratingBadge(value) {
   if (!value) return <span className="inline-block px-2 py-1 rounded-full text-sm bg-gray-200 text-gray-800">—</span>;
   const v = String(value).toLowerCase();
@@ -12,6 +13,7 @@ function ratingBadge(value) {
   if (v.includes("плох")) return <span className="inline-block px-2 py-1 rounded-full text-sm bg-rose-50 text-rose-700">{value}</span>;
   return <span className="inline-block px-2 py-1 rounded-full text-sm bg-gray-100 text-gray-800">{value}</span>;
 }
+
 function formatDateTime(s) {
   if (!s) return "—";
   const d = new Date(s);
@@ -20,6 +22,7 @@ function formatDateTime(s) {
     timeZone: 'Europe/Moscow'
   });
 }
+
 function formatDate(s) {
   if (!s) return "—";
   const d = new Date(s);
@@ -28,6 +31,7 @@ function formatDate(s) {
     timeZone: 'Europe/Moscow'
   });
 }
+
 function formatLocalTime(s, withSeconds = false) {
   if (!s) return "—";
   const d = new Date(s);
@@ -39,6 +43,7 @@ function formatLocalTime(s, withSeconds = false) {
     ...(withSeconds && { second: '2-digit' })
   });
 }
+
 function formatTimeLabel(date, timeRange) {
   if (!date) return "";
   switch(timeRange) {
@@ -54,7 +59,23 @@ function formatTimeLabel(date, timeRange) {
         hour: '2-digit'
       }) + ":00";
     case "7d":
+      return date.toLocaleDateString("ru-RU", {
+        timeZone: 'Europe/Moscow',
+        day: 'numeric',
+        month: 'short'
+      });
     case "all":
+      
+      const now = new Date();
+      const yearDiff = now.getFullYear() - date.getFullYear();
+      if (yearDiff > 0) {
+        return date.toLocaleDateString("ru-RU", {
+          timeZone: 'Europe/Moscow',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
       return date.toLocaleDateString("ru-RU", {
         timeZone: 'Europe/Moscow',
         day: 'numeric',
@@ -64,6 +85,7 @@ function formatTimeLabel(date, timeRange) {
       return formatLocalTime(date);
   }
 }
+
 function coordsToLink(s) {
   if (!s) return null;
   const m = String(s).trim();
@@ -89,11 +111,13 @@ function SensorDataPanel({ product, passport }) {
   const [loadingReadings, setLoadingReadings] = useState(false);
   const [readingsError, setReadingsError] = useState(null);
   const [sensorInfo, setSensorInfo] = useState(null);
+
   useEffect(() => {
     if (sensorDevices.length > 0 && !selectedSensorId) {
       setSelectedSensorId(sensorDevices[0].id);
     }
   }, [sensorDevices, selectedSensorId]);
+
   useEffect(() => {
     if (sensorInfo?.last_seen) {
       console.log("Raw last_seen value:", sensorInfo.last_seen);
@@ -101,51 +125,95 @@ function SensorDataPanel({ product, passport }) {
       console.log("Formatted with formatLocalTime:", formatLocalTime(sensorInfo.last_seen, true));
     }
   }, [sensorInfo]);
+
   useEffect(() => {
     if (!selectedSensorId) return;
     let cancelled = false;
     setLoadingReadings(true);
     setReadingsError(null);
+
+  
     let hours = null;
-    switch(timeRange) {
-      case "1h": hours = 1; break;
-      case "24h": hours = 24; break;
-      case "7d": hours = 168; break;
-      default: hours = null;
+    if (timeRange !== "all") {
+      switch(timeRange) {
+        case "1h": hours = 1; break;
+        case "24h": hours = 24; break;
+        case "7d": hours = 168; break;
+        default: hours = null;
+      }
     }
-    const queryString = hours ? `?hours=${hours}` : "";
+
+   
+    const queryString = hours !== null ? `?hours=${hours}` : `?all=true`;
     const url = `/api/sensors/devices/${selectedSensorId}/readings${queryString}`;
     const token = readAccessToken();
-    fetch(url, {
-      headers: token ? { "Authorization": `Bearer ${token}` } : {}
-    })
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        return res.json();
-      })
-      .then(data => {
+
+    const fetchData = async () => {
+      try {
+        console.log("Запрос данных с датчика:", url);
+        const res = await fetch(url, {
+          headers: token ? { "Authorization": `Bearer ${token}` } : {}
+        });
+
+        if (!res.ok) {
+          if (res.status === 403) {
+            try {
+              const errorData = await res.json();
+              if (errorData.detail === "Not authenticated") {
+                throw new Error("AUTH_REQUIRED");
+              }
+            } catch (e) {
+              throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }
+          }
+          try {
+            const errorData = await res.json();
+            throw new Error(`HTTP ${res.status}: ${res.statusText}. ${errorData.detail || JSON.stringify(errorData)}`);
+          } catch (e) {
+            let errorText = "";
+            try {
+              errorText = await res.text();
+            } catch (e2) {}
+            throw new Error(`HTTP ${res.status}: ${res.statusText}${errorText ? `. ${errorText}` : ""}`);
+          }
+        }
+
+        const data = await res.json();
         if (cancelled) return;
+
         if (Array.isArray(data)) {
           console.log(`Получено ${data.length} записей с датчика`);
-          // Сортируем данные тут, бэк их прям так возвращает
-          const sortedData = [...data].sort((a, b) => 
-            new Date(a.created_at) - new Date(b.created_at)
-          );
+          
+          const sortedData = [...data].sort((a, b) => {
+            const ta = new Date(a.created_at || a.timestamp || a.time).getTime();
+            const tb = new Date(b.created_at || b.timestamp || b.time).getTime();
+            return ta - tb;
+          });
           setRawReadings(sortedData);
         } else {
+          setRawReadings([]); 
           setReadingsError("Неверный формат данных");
         }
-      })
-      .catch(err => {
+      } catch (err) {
         console.error("Ошибка загрузки данных с датчика:", err);
-        if (!cancelled) setReadingsError(err.message || "Ошибка загрузки данных с датчика");
-      })
-      .finally(() => {
+        if (!cancelled) {
+          if (err.message === "AUTH_REQUIRED") {
+            setReadingsError("AUTH_REQUIRED");
+          } else {
+            setReadingsError(err.message || "Ошибка загрузки данных с датчика");
+          }
+        }
+      } finally {
         if (!cancelled) setLoadingReadings(false);
-      });
+      }
+    };
+
+    fetchData();
+
+    
     fetch(`/api/sensors/devices/${selectedSensorId}`, {
-        headers: token ? { "Authorization": `Bearer ${token}` } : {}
-      })
+      headers: token ? { "Authorization": `Bearer ${token}` } : {}
+    })
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -156,8 +224,24 @@ function SensorDataPanel({ product, passport }) {
       .catch(err => {
         console.error("Ошибка загрузки информации о датчике:", err);
       });
+
     return () => { cancelled = true; };
   }, [selectedSensorId, timeRange]);
+
+  
+  if (readingsError === "AUTH_REQUIRED") {
+    return (
+      <div className="mt-6">
+        <div className="mt-6 flex items-center gap-3">
+          <div className="text-[18px] font-medium text-black">Данные с датчиков (мониторинг в реальном времени)</div>
+        </div>
+        <div className="mt-4 bg-[#F7F7F7] rounded-[20px] p-6 text-center py-8">
+          <p className="text-gray-700 font-medium">Авторизуйтесь для просмотра информации о датчиках</p>
+        </div>
+      </div>
+    );
+  }
+
   const getProcessedData = useMemo(() => {
     if (rawReadings.length === 0) return {
       points: [],
@@ -165,6 +249,7 @@ function SensorDataPanel({ product, passport }) {
       minX: null,
       maxX: null
     };
+
     // Для 1h диапазона показываем все данные без агрегации
     if (timeRange === "1h") {
       const values = [];
@@ -195,6 +280,7 @@ function SensorDataPanel({ product, passport }) {
           timestamps.push(new Date(r.created_at || r.timestamp || r.time));
         }
       });
+
       return {
         points: values,
         timestamps: timestamps,
@@ -202,23 +288,50 @@ function SensorDataPanel({ product, passport }) {
         maxX: timestamps.length > 0 ? timestamps[timestamps.length - 1].getTime() : null
       };
     }
+
+    
     let intervalMs;
     switch(timeRange) {
       case "24h":
-        intervalMs = 10 * 60 * 1000; 
+        intervalMs = 10 * 60 * 1000; // 10 минут
         break;
       case "7d":
-        intervalMs = 6 * 60 * 60 * 1000; 
+        intervalMs = 2 * 60 * 60 * 1000; // 2 часа
         break;
       case "all":
-        intervalMs = 24 * 60 * 60 * 1000; 
+        
+        const allTimestamps = rawReadings.map(r => new Date(r.created_at || r.timestamp || r.time))
+          .filter(d => !isNaN(d.getTime()));
+
+        if (allTimestamps.length === 0) {
+          return { points: [], timestamps: [], minX: null, maxX: null };
+        }
+
+        const minX = Math.min(...allTimestamps.map(d => d.getTime()));
+        const maxX = Math.max(...allTimestamps.map(d => d.getTime()));
+        const timeRangeMs = maxX - minX;
+        const dayMs = 24 * 60 * 60 * 1000;
+
+        if (timeRangeMs > 365 * dayMs) { // больше года
+          intervalMs = 7 * dayMs; // неделя
+        } else if (timeRangeMs > 180 * dayMs) { // > 6 месяцев
+          intervalMs = 3 * dayMs; // 3 дня
+        } else if (timeRangeMs > 30 * dayMs) { // > месяц
+          intervalMs = dayMs; // день
+        } else if (timeRangeMs > 7 * dayMs) { // > неделя
+          intervalMs = 12 * 60 * 60 * 1000; // 12 часов
+        } else {
+          intervalMs = 6 * 60 * 60 * 1000; // 6 часов
+        }
         break;
       default:
-        intervalMs = 10 * 60 * 1000; 
+        intervalMs = 10 * 60 * 1000; // по умолчанию 10 минут
     }
+
     const allTimestamps = rawReadings
       .map(r => new Date(r.created_at || r.timestamp || r.time))
       .filter(d => !isNaN(d.getTime()));
+
     if (allTimestamps.length === 0) {
       return {
         points: [],
@@ -227,20 +340,30 @@ function SensorDataPanel({ product, passport }) {
         maxX: null
       };
     }
+
     const minX = Math.min(...allTimestamps.map(d => d.getTime()));
     const maxX = Math.max(...allTimestamps.map(d => d.getTime()));
+
+    
     const slots = [];
     let currentTime = minX;
+    
+    if (!intervalMs || !isFinite(intervalMs) || intervalMs <= 0) {
+      intervalMs = 10 * 60 * 1000;
+    }
     while (currentTime <= maxX) {
       slots.push({
         start: currentTime,
         end: currentTime + intervalMs,
         values: [],
-        timestamp: new Date(currentTime + intervalMs / 2) 
+        timestamp: new Date(currentTime + intervalMs / 2)
       });
       currentTime += intervalMs;
+      // Если слишком много слотов (миллион) — останавливаемся для защиты
+      if (slots.length > 20000) break;
     }
 
+   
     rawReadings.forEach(r => {
       if (!r) return;
       let value;
@@ -262,19 +385,24 @@ function SensorDataPanel({ product, passport }) {
       else if (metric === "salinity" && r.salinity !== null && r.salinity !== undefined) {
         value = parseFloat(r.salinity);
       }
+
       if (value === undefined || isNaN(value)) return;
+
       const timestamp = new Date(r.created_at || r.timestamp || r.time);
       if (isNaN(timestamp.getTime())) return;
+
       const timeMs = timestamp.getTime();
-      const slotIndex = slots.findIndex(slot => 
-        timeMs >= slot.start && timeMs < slot.end
-      );
-      if (slotIndex !== -1) {
+      const slotIndex = Math.floor((timeMs - minX) / intervalMs);
+
+      if (slotIndex >= 0 && slotIndex < slots.length) {
         slots[slotIndex].values.push(value);
       }
     });
+
+   
     const points = [];
     const timestamps = [];
+
     slots.forEach(slot => {
       if (slot.values.length > 0) {
         const avgValue = slot.values.reduce((sum, v) => sum + v, 0) / slot.values.length;
@@ -282,7 +410,9 @@ function SensorDataPanel({ product, passport }) {
         timestamps.push(slot.timestamp);
       }
     });
-    console.log(`После агрегации: ${points.length} точек для диапазона ${timeRange}`);
+
+    console.log(`После агрегации: ${points.length} точек для диапазона ${timeRange} с интервалом ${intervalMs/(60*60*1000)} часов`);
+
     return {
       points,
       timestamps,
@@ -290,6 +420,7 @@ function SensorDataPanel({ product, passport }) {
       maxX
     };
   }, [rawReadings, metric, timeRange]);
+
   const chartData = useMemo(() => {
     if (getProcessedData.points.length === 0) {
       return { 
@@ -303,56 +434,108 @@ function SensorDataPanel({ product, passport }) {
         maxX: null
       };
     }
+
     const { points, timestamps, minX, maxX } = getProcessedData;
     const minValue = Math.min(...points);
     const maxValue = Math.max(...points);
-    const avgValue = (points.reduce((sum, v) => sum + v, 0) / points.length).toFixed(2);
-    const lastValue = points[points.length - 1].toFixed(2);
+
+    let adjustedMinValue = minValue;
+    let adjustedMaxValue = maxValue;
+
+    const range = maxValue - minValue;
+    if (range < 0.1) {
+      const buffer = Math.max(0.05, Math.abs(minValue) * 0.1);
+      adjustedMinValue = minValue - buffer;
+      adjustedMaxValue = maxValue + buffer;
+    } else if (range < 1) {
+      const buffer = 0.2;
+      adjustedMinValue = minValue - buffer;
+      adjustedMaxValue = maxValue + buffer;
+    }
+
+    const avgValue = points.length > 0 ? (points.reduce((sum, v) => sum + v, 0) / points.length).toFixed(2) : null;
+    const lastValue = points.length > 0 ? points[points.length - 1].toFixed(2) : null;
+
     return { 
       points, 
       timestamps,
-      minValue,
-      maxValue,
+      minValue: adjustedMinValue,
+      maxValue: adjustedMaxValue,
       avgValue,
       lastValue,
       minX,
       maxX
     };
   }, [getProcessedData]);
+
   const xAxisLabels = useMemo(() => {
-    if (chartData.timestamps.length === 0 || !chartData.minX || !chartData.maxX) return [];
-    const labelCount = 5; 
+    if (chartData.timestamps.length === 0 || chartData.minX == null || chartData.maxX == null) return [];
+    
+    const timeRangeMs = chartData.maxX - chartData.minX;
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    let labelCount;
+    if (timeRangeMs > 365 * dayMs) {
+      labelCount = 7;
+    } else if (timeRangeMs > 180 * dayMs) {
+      labelCount = 6;
+    } else if (timeRangeMs > 30 * dayMs) {
+      labelCount = 5;
+    } else if (timeRangeMs > 7 * dayMs) {
+      labelCount = 4;
+    } else {
+      labelCount = 3;
+    }
+
     const labels = [];
-    const timeRange = chartData.maxX - chartData.minX;
     for (let i = 0; i < labelCount; i++) {
-      const time = chartData.minX + (timeRange * i) / (labelCount - 1);
+      const time = chartData.minX + (timeRangeMs * i) / (labelCount - 1 || 1);
       labels.push(new Date(time));
     }
+
     return labels;
   }, [chartData.timestamps, chartData.minX, chartData.maxX, timeRange]);
 
   function buildPath() {
-    if (chartData.points.length === 0 || !chartData.minX || !chartData.maxX) return "";
+    if (chartData.points.length === 0 || chartData.minX == null || chartData.maxX == null) return "";
+
     const width = 620; 
     const height = 120; 
     const padding = 10;
+    const timeRangeMs = chartData.maxX - chartData.minX;
+
+    if (timeRangeMs === 0) {
+      return chartData.points.map((value, index) => {
+        const x = padding + (index / (chartData.points.length - 1 || 1)) * (width - 2 * padding);
+        const y = height - padding - ((value - chartData.minValue) / (chartData.maxValue - chartData.minValue || 1)) * (height - 2 * padding);
+        return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+      }).join(' ');
+    }
+
     const pathPoints = chartData.points.map((value, index) => {
       const timestamp = chartData.timestamps[index].getTime();
-      const x = padding + ((timestamp - chartData.minX) / (chartData.maxX - chartData.minX)) * (width - 2 * padding);
-      const rangeY = chartData.maxValue - chartData.minValue;
-      const y = height - padding - ((value - chartData.minValue) / (rangeY || 1)) * (height - 2 * padding);
+      const x = padding + ((timestamp - chartData.minX) / timeRangeMs) * (width - 2 * padding);
+
+      const rangeY = Math.max(0.1, chartData.maxValue - chartData.minValue);
+      const y = height - padding - ((value - chartData.minValue) / rangeY) * (height - 2 * padding);
+
       return { x, y };
     });
+
     const validPoints = pathPoints.filter(point => 
       !isNaN(point.x) && !isNaN(point.y) && 
-      point.x >= 0 && point.x <= width && 
-      point.y >= 0 && point.y <= height
+      isFinite(point.x) && isFinite(point.y) &&
+      point.x >= -1000 && point.x <= 10000 && 
+      point.y >= -1000 && point.y <= 10000
     );
+
     if (validPoints.length === 0) return "";
+
     return validPoints.map((point, i) => 
       i === 0 ? `M ${point.x} ${point.y}` : `L ${point.x} ${point.y}`
     ).join(" ");
   }
+
   if (!hasSensors) {
     return (
       <div className="mt-6">
@@ -365,6 +548,7 @@ function SensorDataPanel({ product, passport }) {
       </div>
     );
   }
+
   return (
     <div className="mt-6">
       <div className="mt-6 flex items-center gap-3">
@@ -470,8 +654,11 @@ function SensorDataPanel({ product, passport }) {
                   </g>
                   <g fontSize="10" textAnchor="middle" fill="#666">
                     {xAxisLabels.map((timestamp, i) => {
-                      const x = 40 + ((timestamp.getTime() - chartData.minX) / 
-                                   (chartData.maxX - chartData.minX || 1)) * 620;
+                      const timeRangeMs = chartData.maxX - chartData.minX;
+                      const x = timeRangeMs > 0 ? 
+                        40 + ((timestamp.getTime() - chartData.minX) / timeRangeMs) * 620 : 
+                        40 + (i / (xAxisLabels.length - 1 || 1)) * 620;
+                      
                       return (
                         <text 
                           key={`time-${i}`} 
@@ -506,14 +693,14 @@ function SensorDataPanel({ product, passport }) {
           <div className="bg-white rounded-[12px] p-4">
             <div className="text-sm text-gray-500 mb-2">Состояние датчика</div>
             <div className="flex items-center">
-            <div className={`w-3 h-3 rounded-full mr-2 ${sensorInfo?.is_active ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <span className="text-sm font-medium">
-              {sensorInfo?.is_active ? "Активен" : "Неактивен"} • 
-              Последнее обновление: {rawReadings.length > 0 
-                ? formatLocalTime(rawReadings[rawReadings.length - 1].created_at, true)
-                : (sensorInfo?.last_seen ? formatLocalTime(sensorInfo.last_seen, true) : "неизвестно")}
-            </span>
-          </div>
+              <div className={`w-3 h-3 rounded-full mr-2 ${sensorInfo?.is_active ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-sm font-medium">
+                {sensorInfo?.is_active ? "Активен" : "Неактивен"} • 
+                Последнее обновление: {rawReadings.length > 0 
+                  ? formatLocalTime(rawReadings[rawReadings.length - 1].created_at, true)
+                  : (sensorInfo?.last_seen ? formatLocalTime(sensorInfo.last_seen, true) : "неизвестно")}
+              </span>
+            </div>
           </div>
           <div className="bg-white rounded-[12px] p-4">
             <div className="text-sm text-gray-500 mb-2">Диапазон значений</div>
@@ -528,6 +715,7 @@ function SensorDataPanel({ product, passport }) {
     </div>
   );
 }
+
 export default function ProductDetails({ productId, onClose, setMsg, onNavigate }) {
   const [qty, setQty] = useState(0);
   const [product, setProduct] = useState(null);
@@ -535,20 +723,24 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
   const [loading, setLoading] = useState(true);
   const [imgSrc, setImgSrc] = useState(null);
   const [loadingImg, setLoadingImg] = useState(false);
+
   function handleAdd() {
     const next = Math.max(1, qty + 1);
     setQty(next);
     addItem(product, 1);
     try { window.toast?.("Добавлено в корзину"); } catch {}
   }
+
   function changeQty(delta) {
     const next = Math.max(0, qty + delta);
     setQty(next);
     addItem(product, delta);
   }
+
   useEffect(() => {
     let cancelled = false;
     let objectUrl = null;
+
     async function load() {
       setLoading(true);
       try {
@@ -558,10 +750,13 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
           setLoading(false);
           return;
         }
+
         if (cancelled) return;
         setProduct(r.data);
+
         const passportRes = await getPassport(productId);
         if (!cancelled) setPassport(passportRes && passportRes.ok ? passportRes.data : null);
+
         const primary = (r.data.media && r.data.media.find(m => m.is_primary)) || null;
         if (primary) {
           if (primary.presigned_url) {
@@ -605,7 +800,9 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
         if (!cancelled) setLoading(false);
       }
     }
+
     if (productId) load();
+
     return () => {
       cancelled = true;
       if (objectUrl) {
@@ -614,8 +811,10 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
       }
     };
   }, [productId]);
+
   if (loading) return <div className="max-w-6xl mx-auto p-6">Загрузка...</div>;
   if (!product) return <div className="max-w-6xl mx-auto p-6">Товар не найден</div>;
+
   const data = passport?.data || {};
   const certifications = passport?.certifications || product?.certifications || [];
   const sensorKeys = new Set([
@@ -636,7 +835,9 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
     "Последние значимые алерты",
     "Краткая рекомендация от ИИ"
   ]);
+
   const coordsLink = coordsToLink(data["Местоположение точки ( координаты участка)"]);
+
   function renderStars() {
     return (
       <div className="flex items-center gap-3">
@@ -651,21 +852,23 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
       </div>
     );
   }
+
   function formatPrice(p) {
     if (p == null) return "—";
     if (typeof p === "number") return p.toLocaleString("ru-RU") + " ₽";
     if (!isNaN(Number(p))) return Number(p).toLocaleString("ru-RU") + " ₽";
     return String(p) + " ₽";
   }
+
   const oldPrice = product.old_price ?? product.price_old ?? null;
   const mainPrice = product.price ?? product.price_value ?? product?.price?.amount ?? null;
+
   function renderCertificateCard(cert) {
     const key = cert._uid || `${cert.name}-${cert.date || ""}`;
     return (
       <div key={key} className="bg-white rounded-[16px] p-4 shadow-sm border border-gray-100 flex gap-4 items-start">
         <div className="flex-shrink-0">
           <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-[#3E8D43]/20 to-[#A8D5A0]/10">
-            {/* сертификат */}
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path d="M12 2l2.5 5.5L20 8l-4 3 1 6L12 14l-5 3 1-6L4 8l5.5-.5L12 2z" fill="#2F855A"/>
             </svg>
@@ -689,8 +892,10 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
       </div>
     );
   }
+
   const isGrowing = !!product?.is_growing;
   const hasActiveSensors = (product?.sensor_devices || []).some(s => s.is_active);
+
   return (
     <div className="max-w-[1330px] mx-auto px-4 py-5">
       <div className="flex justify-between items-start mb-4">
@@ -701,6 +906,7 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
           <h3 className="text-[#A8A8A8]"><span className="text-[#A8A8A8] cursor-pointer" onClick={() => onNavigate("main")}>Главная ·</span> Категории · <span className="text-black">{product.category || "—"}</span></h3>
         </div>
       </div>
+
       <div className="flex flex-col lg:flex-row w-full gap-8">
         <div className="lg:w-1/2">
           <div className="bg-white rounded-[20px] pt-6 pb-6 flex items-center justify-center overflow-hidden">
@@ -716,6 +922,7 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
             <p className="text-[16px] text-[#3E8D43]">{product.farm_name || "Ферма"}</p>
             <p className="text-2xl font-bold mt-1">{product.name}</p>
             <p className="mt-3">{renderStars()}</p>
+
             <div className="mt-6 flex flex-col bg-[#F7F7F7] rounded-[20px] p-6 gap-6">
               <div className="flex flex-col md:flex-row justify-between gap-4">
                 <div>
@@ -753,12 +960,14 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
                 </p>
               </div>
             </div>
+
             <div className="mt-4 bg-[#3E8D43]/20 rounded-[20px] p-6 text-[16px] text-black">
               <div className="flex items-start gap-3">
                 <img src={discount} className="w-6 h-6 mt-1" alt="Скидка" />
                 <p>Промокод GRYADKA на доставку в вашем городе — скидка 500 рублей на первый заказ.</p>
               </div>
             </div>
+
             <div className="mt-4 bg-[#F7F7F7] rounded-[20px] p-6">
               <h4 className="text-[18px] text-black font-medium mb-2">Паспорт товара</h4>
               <div className="space-y-2">
@@ -779,10 +988,12 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
           </div>
         </div>
       </div>
+
       <div className="mt-8">
         <h3 className="text-[18px] font-medium text-black mb-2">Краткое описание</h3>
         <div className="text-gray-700 text-[15px] leading-relaxed">{product.short_description || "—"}</div>
       </div>
+
       <div className="mt-8">
         <div className="flex items-center gap-3 mb-4">
           <div className="text-[18px] font-medium text-black">Пищевая ценность на 100г</div>
@@ -806,6 +1017,7 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
           </div>
         </div>
       </div>
+
       <div className="mt-8">
         <div className="flex items-center gap-3 mb-4">
           <div className="text-[18px] font-medium text-black">Качество и контроль</div>
@@ -837,9 +1049,11 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
           </div>
         </div>
       </div>
+
       {isGrowing && hasActiveSensors && (
         <SensorDataPanel product={product} passport={passport} />
       )}
+
       {!isGrowing && data["Есть датчики"] && (
         <div className="mt-8">
           <div className="flex items-center gap-3 mb-4">
@@ -898,6 +1112,7 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
           </div>
         </div>
       )}
+
       <div className="mt-8">
         <div className="text-[18px] font-medium mb-4 text-black">Сертификаты</div>
         {certifications && certifications.length > 0 ? (
@@ -908,6 +1123,7 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
           <div className="text-gray-500 text-md">Сертификаты отсутствуют</div>
         )}
       </div>
+
       <div className="mt-8">
         <div className="text-[18px] font-medium mb-4 text-black">Дополнительные параметры</div>
         <div className="grid gap-2">
@@ -923,6 +1139,7 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
           )}
         </div>
       </div>
+
       <div className="mt-16">
         <Footer />
       </div>
