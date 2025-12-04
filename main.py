@@ -34,7 +34,7 @@ logger = logging.getLogger("app")
 app = FastAPI(title="Gryadka API")
 
 # Подключение роутера аутентификации
-app.include_router(auth_router.router, prefix="/api")
+app.include_router(auth_router.router)
 app.include_router(sensors_router.router)
 app.include_router(farms_router.router)
 app.include_router(products_router.router)

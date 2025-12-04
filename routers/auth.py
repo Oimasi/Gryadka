@@ -16,7 +16,7 @@ from utils.security import verify_password
 from utils.refresh_tokens import create_refresh_token, verify_and_rotate_refresh_token, ReuseDetected, _hash_token_hmac
 from utils.auth import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 
-router = APIRouter(tags=["auth"], prefix="/auth")
+router = APIRouter(tags=["auth"], prefix="/api/auth")
 
 import os
 
