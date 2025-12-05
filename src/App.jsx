@@ -18,6 +18,7 @@ import Categories from "./components/main/Categories";
 import SuccessPage from "./components/main/Success";
 import Fags from "./components/main/Faqs";
 import CreateSensorForm from "./components/main/CreateSensorForm";
+import ProductQRPage from "./components/main/ProductQRPage";
 
 // Обёртка для страницы продукта с параметром из URL
 function ProductDetailsWrapper({ setMsg }) {
@@ -31,6 +32,12 @@ function ProductDetailsWrapper({ setMsg }) {
       setMsg={setMsg}
     />
   );
+}
+
+// Обёртка для QR-страницы товара
+function ProductQRPageWrapper() {
+  const { id } = useParams();
+  return <ProductQRPage productId={parseInt(id)} />;
 }
 
 // Основной компонент приложения
@@ -93,7 +100,7 @@ function AppContent() {
   }
 
   // Определяем показывать ли header
-  const showHeader = location.pathname !== "/login" && location.pathname !== "/register";
+  const showHeader = location.pathname !== "/login" && location.pathname !== "/register" && !location.pathname.startsWith("/qr/");
 
   return (
     <div className="app">
@@ -289,6 +296,11 @@ function AppContent() {
         <Route
           path="/product/:id"
           element={<ProductDetailsWrapper setMsg={setMsg} />}
+        />
+
+        <Route
+          path="/qr/:id"
+          element={<ProductQRPageWrapper />}
         />
 
         <Route
