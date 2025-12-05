@@ -35,6 +35,179 @@ function coordsToLink(s) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lat + "," + lon)}`;
 }
 
+// 1. Scroll Progress Bar
+function ScrollProgress() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      setProgress(scrollPercent);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <div className="fixed top-0 left-0 right-0 h-1 bg-gray-200/30 z-50">
+      <div
+        className="h-full bg-gradient-to-r from-[#3E8D43] to-[#6fcf7c] transition-all duration-150 ease-out"
+        style={{ width: `${progress}%` }}
+      />
+    </div>
+  );
+}
+
+// 3. Animated Number Counter
+function AnimatedNumber({ value, suffix = "", duration = 1200 }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated) {
+          setHasAnimated(true);
+          const numValue = parseFloat(value);
+          if (isNaN(numValue)) {
+            setDisplayValue(value);
+            return;
+          }
+          
+          const startTime = Date.now();
+          const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const current = numValue * easeOut;
+            
+            setDisplayValue(current.toFixed(1));
+            
+            if (progress < 1) {
+              requestAnimationFrame(animate);
+            } else {
+              setDisplayValue(numValue.toFixed(1));
+            }
+          };
+          requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [value, duration, hasAnimated]);
+
+  return <span ref={ref}>{displayValue}{suffix}</span>;
+}
+
+// 4. TiltCard с поддержкой touch (mobile-first)
+function TiltCard({ children, className = "" }) {
+  const cardRef = useRef(null);
+  const [transform, setTransform] = useState("");
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  const handleMove = (clientX, clientY) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    // Очень мягкий эффект для ПК, чуть сильнее для мобильных
+    const intensity = isDesktop ? 200 : 40;
+    const scale = isDesktop ? 1.002 : 1.008;
+    const rotateX = (y - centerY) / intensity;
+    const rotateY = (centerX - x) / intensity;
+    setTransform(`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(${scale}, ${scale}, ${scale})`);
+  };
+
+  const handleReset = () => {
+    setTransform("");
+  };
+
+  return (
+    <div
+      ref={cardRef}
+      className={`transition-transform duration-300 ease-out ${className}`}
+      style={{ transform }}
+      onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
+      onMouseLeave={handleReset}
+      onTouchMove={(e) => {
+        const touch = e.touches[0];
+        handleMove(touch.clientX, touch.clientY);
+      }}
+      onTouchEnd={handleReset}
+    >
+      {children}
+    </div>
+  );
+}
+
+// 8. Staggered Stars (быстрая анимация)
+function StaggeredStars({ count = 5, filled = 5 }) {
+  const [animate, setAnimate] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setAnimate(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="flex gap-0.5">
+      {Array.from({ length: count }).map((_, i) => (
+        <svg
+          key={i}
+          className={`w-4 h-4 transition-all duration-200 ${
+            i < filled ? "text-amber-400" : "text-gray-300"
+          } ${animate ? "scale-100 opacity-100" : "scale-0 opacity-0"}`}
+          style={{ transitionDelay: `${i * 60}ms` }}
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.955a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.447a1 1 0 00-.364 1.118l1.287 3.955c.3.921-.755 1.688-1.54 1.118L10 15.347l-3.37 2.447c-.785.57-1.84-.197-1.54-1.118l1.287-3.955a1 1 0 00-.364-1.118L2.643 9.382c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69L9.05 2.927z" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+// 9. Bouncing Loading Dots
+function LoadingDots() {
+  return (
+    <div className="flex gap-1.5 justify-center">
+      {[0, 1, 2].map(i => (
+        <div
+          key={i}
+          className="w-2 h-2 bg-[#3E8D43] rounded-full animate-bounce"
+          style={{ animationDelay: `${i * 0.15}s`, animationDuration: "0.6s" }}
+        />
+      ))}
+    </div>
+  );
+}
+
 // Анимированная секция с IntersectionObserver
 function AnimatedSection({ children, delay = 0, className = "" }) {
   const ref = useRef(null);
@@ -66,33 +239,6 @@ function AnimatedSection({ children, delay = 0, className = "" }) {
       }}
     >
       {children}
-    </div>
-  );
-}
-
-// Компонент листочка для декора
-function LeafDecor({ className = "" }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/>
-    </svg>
-  );
-}
-
-// Компонент звёзд рейтинга
-function Stars({ count = 5, filled = 5 }) {
-  return (
-    <div className="flex gap-0.5">
-      {Array.from({ length: count }).map((_, i) => (
-        <svg
-          key={i}
-          className={`w-4 h-4 ${i < filled ? "text-amber-400" : "text-gray-300"}`}
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.955a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.447a1 1 0 00-.364 1.118l1.287 3.955c.3.921-.755 1.688-1.54 1.118L10 15.347l-3.37 2.447c-.785.57-1.84-.197-1.54-1.118l1.287-3.955a1 1 0 00-.364-1.118L2.643 9.382c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69L9.05 2.927z" />
-        </svg>
-      ))}
     </div>
   );
 }
@@ -171,15 +317,17 @@ export default function ProductQRPage({ productId }) {
     }
   }, [loading]);
 
+  // 9. Loading с bouncing dots
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#f0f7f0] to-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-5">
           <div className="relative">
             <div className="w-16 h-16 border-4 border-[#3E8D43]/20 rounded-full animate-spin border-t-[#3E8D43]" />
-            <img src={logo} alt="Gryadka" className="w-8 h-6 object-contain absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+            <img src={logo} alt="Gryadka" className="w-8 h-6 object-contain absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
           </div>
-          <p className="text-[#3E8D43] font-medium animate-pulse">Загружаем...</p>
+          <p className="text-[#3E8D43] font-medium">Загружаем...</p>
+          <LoadingDots />
         </div>
       </div>
     );
@@ -209,6 +357,9 @@ export default function ProductQRPage({ productId }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f0f7f0] via-white to-[#f8faf8] overflow-x-hidden">
+      {/* 1. Scroll Progress Bar */}
+      <ScrollProgress />
+
       {/* Hero Section */}
       <div className="relative h-[70vh] min-h-[400px] max-h-[600px] overflow-hidden">
         {/* Фоновое изображение с parallax */}
@@ -234,11 +385,21 @@ export default function ProductQRPage({ productId }) {
         {/* Градиентный оверлей */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-        {/* Декоративные элементы */}
+        {/* 2. Pulsing Badge - очень мягкий */}
         <div className={`absolute top-6 right-6 transition-all duration-700 delay-500 ${heroLoaded ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}`}>
-          <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
-            <img src={logo} alt="Gryadka" className="w-6 h-5 object-contain" />
-            <span className="text-sm font-medium text-[#3E8D43]">Сертифицировано Gryadka</span>
+          <div className="relative">
+            {/* Мягкое свечение */}
+            <div 
+              className="absolute inset-0 bg-[#3E8D43]/20 rounded-full blur-md"
+              style={{ 
+                animation: "pulse-soft 3s ease-in-out infinite",
+                transform: "scale(1.15)"
+              }} 
+            />
+            <div className="relative bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
+              <img src={logo} alt="Gryadka" className="w-6 h-5 object-contain" />
+              <span className="text-sm font-medium text-[#3E8D43]">Сертифицировано Gryadka</span>
+            </div>
           </div>
         </div>
 
@@ -258,7 +419,8 @@ export default function ProductQRPage({ productId }) {
               {product.name}
             </h1>
             <div className="flex items-center gap-3">
-              <Stars filled={5} />
+              {/* 8. Staggered Stars */}
+              <StaggeredStars filled={5} />
               <span className="text-white/70 text-sm">{product.reviews_count || 15} оценок</span>
             </div>
           </div>
@@ -286,15 +448,16 @@ export default function ProductQRPage({ productId }) {
         {/* Краткое описание */}
         {product.short_description && (
           <AnimatedSection delay={0} className="mb-6">
-            <div className="bg-white rounded-3xl p-5 shadow-sm border border-[#3E8D43]/10">
+            {/* 4. TiltCard */}
+            <TiltCard className="bg-white rounded-3xl p-5 shadow-sm border border-[#3E8D43]/10">
               <p className="text-gray-700 leading-relaxed">{product.short_description}</p>
-            </div>
+            </TiltCard>
           </AnimatedSection>
         )}
 
         {/* Паспорт товара */}
         <AnimatedSection delay={100} className="mb-6">
-          <div className="bg-white rounded-3xl p-5 shadow-sm border border-[#3E8D43]/10">
+          <TiltCard className="bg-white rounded-3xl p-5 shadow-sm border border-[#3E8D43]/10">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 bg-[#3E8D43]/10 rounded-full flex items-center justify-center">
                 <svg className="w-4 h-4 text-[#3E8D43]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -339,12 +502,12 @@ export default function ProductQRPage({ productId }) {
                 </div>
               )}
             </div>
-          </div>
+          </TiltCard>
         </AnimatedSection>
 
         {/* Качество и контроль */}
         <AnimatedSection delay={200} className="mb-6">
-          <div className="bg-white rounded-3xl p-5 shadow-sm border border-[#3E8D43]/10">
+          <TiltCard className="bg-white rounded-3xl p-5 shadow-sm border border-[#3E8D43]/10">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 bg-[#3E8D43]/10 rounded-full flex items-center justify-center">
                 <svg className="w-4 h-4 text-[#3E8D43]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -374,13 +537,13 @@ export default function ProductQRPage({ productId }) {
                 <div className="text-sm font-medium text-[#3E8D43]">✓ Контроль</div>
               </div>
             </div>
-          </div>
+          </TiltCard>
         </AnimatedSection>
 
         {/* Данные с датчиков (для выросшего продукта) */}
         {data["Есть датчики"] && (
           <AnimatedSection delay={300} className="mb-6">
-            <div className="bg-white rounded-3xl p-5 shadow-sm border border-[#3E8D43]/10">
+            <TiltCard className="bg-white rounded-3xl p-5 shadow-sm border border-[#3E8D43]/10">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 bg-[#3E8D43]/10 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-[#3E8D43]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -391,13 +554,15 @@ export default function ProductQRPage({ productId }) {
               </div>
 
               <div className="space-y-4">
-                {/* pH */}
+                {/* pH с AnimatedNumber */}
                 <div className="bg-gradient-to-r from-[#f0f7f0] to-[#e8f5e8] rounded-2xl p-4">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <div className="text-xs text-gray-500">Средний pH</div>
                       <div className="text-2xl font-bold text-gray-900 mt-1">
-                        {data["Средний pH за время выращивания"] ?? "—"}
+                        {data["Средний pH за время выращивания"] ? (
+                          <AnimatedNumber value={data["Средний pH за время выращивания"]} />
+                        ) : "—"}
                       </div>
                     </div>
                     {ratingBadge(data["Оценка pH"])}
@@ -427,13 +592,15 @@ export default function ProductQRPage({ productId }) {
                   )}
                 </div>
 
-                {/* Температура */}
+                {/* Температура с AnimatedNumber */}
                 <div className="bg-gradient-to-r from-[#f0f7f0] to-[#e8f5e8] rounded-2xl p-4">
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="text-xs text-gray-500">Средняя температура</div>
                       <div className="text-2xl font-bold text-gray-900 mt-1">
-                        {data["Средняя температура за время выращивания"] ? `${data["Средняя температура за время выращивания"]}°C` : "—"}
+                        {data["Средняя температура за время выращивания"] ? (
+                          <><AnimatedNumber value={data["Средняя температура за время выращивания"]} suffix="°C" /></>
+                        ) : "—"}
                       </div>
                     </div>
                     <div className={`text-xs font-medium px-3 py-1 rounded-full ${
@@ -456,14 +623,14 @@ export default function ProductQRPage({ productId }) {
                   </div>
                 )}
               </div>
-            </div>
+            </TiltCard>
           </AnimatedSection>
         )}
 
         {/* Рекомендация от ИИ */}
         {data["Краткая рекомендация от ИИ"] && (
           <AnimatedSection delay={400} className="mb-6">
-            <div className="bg-gradient-to-br from-[#3E8D43] to-[#2d6b31] rounded-3xl p-5 shadow-lg">
+            <TiltCard className="bg-gradient-to-br from-[#3E8D43] to-[#2d6b31] rounded-3xl p-5 shadow-lg">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                   <span className="text-lg">✨</span>
@@ -471,14 +638,14 @@ export default function ProductQRPage({ productId }) {
                 <h2 className="text-lg font-semibold text-white">Рекомендация от Gryadka AI</h2>
               </div>
               <p className="text-white/90 leading-relaxed">{data["Краткая рекомендация от ИИ"]}</p>
-            </div>
+            </TiltCard>
           </AnimatedSection>
         )}
 
         {/* Сертификаты */}
         {(passport?.certifications?.length > 0 || product?.certifications?.length > 0) && (
           <AnimatedSection delay={500} className="mb-6">
-            <div className="bg-white rounded-3xl p-5 shadow-sm border border-[#3E8D43]/10">
+            <TiltCard className="bg-white rounded-3xl p-5 shadow-sm border border-[#3E8D43]/10">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 bg-[#3E8D43]/10 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-[#3E8D43]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -506,22 +673,27 @@ export default function ProductQRPage({ productId }) {
                   </div>
                 ))}
               </div>
-            </div>
+            </TiltCard>
           </AnimatedSection>
         )}
 
-        {/* CTA кнопка */}
+        {/* 5. CTA кнопка с Shimmer */}
         <AnimatedSection delay={600} className="mt-8">
           <a
             href={`/product/${productId}`}
-            className="block w-full bg-gradient-to-r from-[#3E8D43] to-[#4a9f50] text-white text-center py-4 px-6 rounded-2xl font-semibold text-lg shadow-lg shadow-[#3E8D43]/30 hover:shadow-xl hover:shadow-[#3E8D43]/40 transform hover:-translate-y-0.5 transition-all duration-300"
+            className="relative block w-full overflow-hidden bg-gradient-to-r from-[#3E8D43] to-[#4a9f50] text-white text-center py-4 px-6 rounded-2xl font-semibold text-lg shadow-lg shadow-[#3E8D43]/30 hover:shadow-xl hover:shadow-[#3E8D43]/40 transform hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300"
           >
-            <span className="flex items-center justify-center gap-2">
+            <span className="relative z-10 flex items-center justify-center gap-2">
               Открыть на сайте
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
             </span>
+            {/* Shimmer effect */}
+            <div 
+              className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent"
+              style={{ animation: "shimmer 2.5s infinite" }}
+            />
           </a>
         </AnimatedSection>
 
@@ -539,4 +711,3 @@ export default function ProductQRPage({ productId }) {
     </div>
   );
 }
-
