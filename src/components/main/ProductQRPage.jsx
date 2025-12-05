@@ -364,16 +364,20 @@ export default function ProductQRPage({ productId }) {
       <div className="relative h-[70vh] min-h-[400px] max-h-[600px] overflow-hidden">
         {/* Фоновое изображение с parallax */}
         <div
-          className="absolute inset-0 transition-transform duration-100"
-          style={{ transform: `translateY(${scrollY * 0.3}px)` }}
+          className="absolute inset-0 will-change-transform"
+          style={{ transform: `translate3d(0, ${scrollY * 0.3}px, 0)` }}
         >
           {imgSrc ? (
             <img
               src={imgSrc}
               alt={product.name}
-              className={`w-full h-[120%] object-cover transition-all duration-1000 ${
-                heroLoaded ? "scale-100 opacity-100" : "scale-110 opacity-0"
+              className={`w-full h-[120%] object-cover transition-opacity duration-1000 ${
+                heroLoaded ? "opacity-100" : "opacity-0"
               }`}
+              style={{
+                transform: heroLoaded ? 'scale(1)' : 'scale(1.1)',
+                transition: heroLoaded ? 'none' : 'transform 1s ease-out'
+              }}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-[#3E8D43]/20 to-[#a8d5a0]/30 flex items-center justify-center">
