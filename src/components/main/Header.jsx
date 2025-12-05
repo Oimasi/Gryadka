@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import logo from "/images/logotype.png"
 import marker from "/images/marker.svg"
 import search from "/images/search.svg"
@@ -12,6 +13,7 @@ export default function Header({ user, onNavigate, onLogout, query, setQuery, on
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [pressedBurger, setPressedBurger] = useState(false)
+  const location = useLocation();
 
   const sliderRef = useRef(null);
 
@@ -89,6 +91,12 @@ export default function Header({ user, onNavigate, onLogout, query, setQuery, on
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const isActive = (path) => {
+    if (path === "/" && location.pathname === "/") return true;
+    if (path !== "/" && location.pathname.startsWith(path)) return true;
+    return false;
+  };
+
   return (
     <header className="flex-col flex gap-[15px] justify-between max-w-[1330px] bg-white sticky top-0 z-50 my-[8px] mx-auto p-[16px]">
       <div className="border-b-1 border-[#CCCCCC] flex flex-row pb-4 justify-between gap-[20px]">
@@ -117,20 +125,20 @@ export default function Header({ user, onNavigate, onLogout, query, setQuery, on
 
         {user ? (
           <div className="gap-[10px] justify-between flex">
-            <button className="w-[46px] h-[46px] items-center justify-center bg-none active:bg-[#F9F9F9] transition-all duration-150 hover:bg-[#F9F9F9] border-1 border-[#E9E9E9] rounded-4xl cursor-pointer" onClick={() => onNavigate("cart")}>
-              <img src={basket} className="flex ml-3"/>
-            </button>
-            <button className="w-[46px] h-[46px] items-center justify-center bg-none active:bg-[#F9F9F9] transition-all duration-150 hover:bg-[#F9F9F9] border-1 border-[#E9E9E9] rounded-4xl cursor-pointer" onClick={() => onNavigate("profile")}>
-              <img src={userw} className="flex ml-3.5"/>
-            </button>
+            <Link to="/cart" className="w-[46px] h-[46px] flex items-center justify-center bg-none active:bg-[#F9F9F9] transition-all duration-150 hover:bg-[#F9F9F9] border-1 border-[#E9E9E9] rounded-4xl">
+              <img src={basket} className="flex"/>
+            </Link>
+            <Link to="/profile" className="w-[46px] h-[46px] flex items-center justify-center bg-none active:bg-[#F9F9F9] transition-all duration-150 hover:bg-[#F9F9F9] border-1 border-[#E9E9E9] rounded-4xl">
+              <img src={userw} className="flex"/>
+            </Link>
             <button className="w-[46px] h-[46px] items-center justify-center bg-none active:bg-[#F9F9F9] transition-all duration-150 hover:bg-[#F9F9F9] border-1 border-[#E9E9E9] rounded-4xl cursor-pointer" onClick={onLogout}>
               <img src={logout} className="flex ml-3.5"/>
             </button>
           </div>
         ) : (
           <div className="justify-between flex gap-[9px]">
-            <button className="py-2.5 px-5 bg-none border-1 border-[#E9E9E9] rounded-4xl cursor-pointer transition-all duration-150 active:bg-[#F9F9F9] hover:bg-[#F9F9F9]" onClick={() => onNavigate("login")}>Войти</button>
-            <button className="py-2.5 px-5 bg-none border-1 border-[#E9E9E9] rounded-4xl cursor-pointer transition-all duration-150 active:bg-[#F9F9F9] hover:bg-[#F9F9F9]" onClick={() => onNavigate("register")}>Регистрация</button>
+            <Link to="/login" className="py-2.5 px-5 bg-none border-1 border-[#E9E9E9] rounded-4xl transition-all duration-150 active:bg-[#F9F9F9] hover:bg-[#F9F9F9]">Войти</Link>
+            <Link to="/register" className="py-2.5 px-5 bg-none border-1 border-[#E9E9E9] rounded-4xl transition-all duration-150 active:bg-[#F9F9F9] hover:bg-[#F9F9F9]">Регистрация</Link>
           </div>
         )}   
       </div>
@@ -139,18 +147,46 @@ export default function Header({ user, onNavigate, onLogout, query, setQuery, on
             ref={sliderRef}
             className="overflow-x-auto scrollbar-hide flex flex-row gap-5 items-center whitespace-nowrap"
           >
-            <button className="text-[#2e7433] py-2 px-4 bg-none border-1 border-[#3E8D43] transition-all duration-150 rounded-xl cursor-pointer active:bg-[#3E8D43] active:text-white hover:text-white hover:bg-[#3E8D43]" onClick={() => onNavigate("main")}>
+            <Link 
+              to="/" 
+              className={`py-2 px-4 border-1 transition-all duration-150 rounded-xl ${
+                isActive("/") && location.pathname === "/" 
+                  ? "bg-[#3E8D43] text-white border-[#3E8D43]" 
+                  : "text-[#2e7433] border-[#3E8D43] hover:bg-[#3E8D43] hover:text-white active:bg-[#3E8D43] active:text-white"
+              }`}
+            >
               Главная
-            </button>
-            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => onNavigate("categories")}>
+            </Link>
+            <Link 
+              to="/categories" 
+              className={`text-[16px] transition-all duration-150 ${
+                isActive("/categories") 
+                  ? "text-black/90" 
+                  : "text-black/50 hover:text-black/90 active:text-black/90"
+              }`}
+            >
               Все категории
-            </button>
-            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => onNavigate("all")}>
+            </Link>
+            <Link 
+              to="/products" 
+              className={`text-[16px] transition-all duration-150 ${
+                isActive("/products") 
+                  ? "text-black/90" 
+                  : "text-black/50 hover:text-black/90 active:text-black/90"
+              }`}
+            >
               Все товары
-            </button>
-            <button className="text-black/50 text-[16px] hover:text-black/90 active:text-black/90 transition-all duration-150 cursor-pointer" onClick={() => onNavigate("faqs")}>
+            </Link>
+            <Link 
+              to="/faqs" 
+              className={`text-[16px] transition-all duration-150 ${
+                isActive("/faqs") 
+                  ? "text-black/90" 
+                  : "text-black/50 hover:text-black/90 active:text-black/90"
+              }`}
+            >
               FAQ
-            </button>
+            </Link>
           </div>
 
           {user?.role === "farmer" && (

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 export default function ProfileDropdown({ onNavigate, onLogout }) {
   const [open, setOpen] = useState(false);
@@ -32,21 +33,18 @@ export default function ProfileDropdown({ onNavigate, onLogout }) {
 
       {open && (
           <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg z-20">
-            <button className="block w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => { onNavigate("my"); setOpen(false); }}>
+            <Link to="/my" className="block w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => setOpen(false)}>
               Мои товары
-            </button>
-            <button className="block w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => { onNavigate("create_product"); setOpen(false); }}>
+            </Link>
+            <Link to="/create-product" className="block w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => setOpen(false)}>
               Создать товар
-            </button>
-            <button className="block w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => { onNavigate("create_farm"); setOpen(false); }}>
+            </Link>
+            <Link to="/create-farm" className="block w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => setOpen(false)}>
               Создать ферму
-            </button>
-            <button
-              className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-              onClick={() => { onNavigate("create_sensor"); setOpen(false); }}
-            >
+            </Link>
+            <Link to="/create-sensor" className="block w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => setOpen(false)}>
               Создать датчик
-            </button>
+            </Link>
           </div>
         )}
     </div>

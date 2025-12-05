@@ -106,7 +106,7 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete, v
 
         {product.is_growing != null && (
           <span
-            className={`absolute right-3 top-2 inline-block text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-full ${
+            className={`absolute left-3 top-[41px] inline-block text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-full ${
               product.is_growing
                 ? 'bg-blue-100 text-blue-700'
                 : 'bg-green-100 text-green-700'

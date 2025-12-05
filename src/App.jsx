@@ -1,5 +1,6 @@
 // src/App.jsx
 import React, { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import Msg from "./components/main/Msg";
 import LoginForm from "./components/auth/LoginForm";
 import RegisterForm from "./components/auth/RegisterForm";
@@ -8,7 +9,7 @@ import ProductForm from "./components/main/ProductForm";
 import ProductDetails from "./components/main/ProductDetails";
 import CreateFarm from "./components/main/CreateFarm";
 import Profile from "./components/main/Profile";
-import { getMe, readAccessToken, logout as apiLogout, getProducts, deleteProduct, getProduct } from "./api";
+import { getMe, readAccessToken, logout as apiLogout, deleteProduct } from "./api";
 import Header from "./components/main/Header";
 import MainPage from "./components/main/mainPage";
 import CartPage from "./components/main/CartPage";
@@ -18,18 +19,31 @@ import SuccessPage from "./components/main/Success";
 import Fags from "./components/main/Faqs";
 import CreateSensorForm from "./components/main/CreateSensorForm";
 
-export default function App() {
-  // Состояния приложения
-  const [page, setPage] = useState("main");                    // Текущая страница
-  const [msg, setMsg] = useState(null);                       // Сообщение для отображения
-  const [user, setUser] = useState(null);                     // Данные пользователя
-  const [openProduct, setOpenProduct] = useState(null);       // Открытый продукт
-  const [editingProduct, setEditingProduct] = useState(null); // Редактируемый продукт
-  const [query, setQuery] = useState("");                     // Поисковый запрос
-  // Счетчик для принудительной перезагрузки списков
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [productsForReload, setProductsForReload] = useState(0); // изменить значение, чтобы перезагрузить списки
+// Обёртка для страницы продукта с параметром из URL
+function ProductDetailsWrapper({ setMsg }) {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  return (
+    <ProductDetails
+      productId={parseInt(id)}
+      onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)}
+      onClose={() => navigate("/products")}
+      setMsg={setMsg}
+    />
+  );
+}
 
+// Основной компонент приложения
+function AppContent() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Состояния приложения
+  const [msg, setMsg] = useState(null);
+  const [user, setUser] = useState(null);
+  const [query, setQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [productsForReload, setProductsForReload] = useState(0);
   const [categoryFilterActive, setCategoryFilterActive] = useState(false);
 
   // Загрузка данных пользователя при запуске приложения
@@ -47,41 +61,20 @@ export default function App() {
     loadMe();
   }, []);
 
-  // Навигация между страницами
-  function navigate(to) {
-    setMsg(null);
-    setPage(to);
-    setCategoryFilterActive(false);
-  }
-
   // Обработка выхода пользователя
   async function handleLogout() {
     await apiLogout();
     setUser(null);
     setMsg("✅ Вы вышли");
-    setPage("main");
+    navigate("/");
     setCategoryFilterActive(false);
   }
 
   function handleSelectCategory(category) {
     setSelectedCategory(category);
-    setPage("all");
-    setCategoryFilterActive(true); 
-    setProductsForReload(x => x + 1); 
-  }
-  
-  // Открытие деталей продукта
-  function openProductView(p) {
-    setOpenProduct(p);
-    setPage("product_details");
-    setCategoryFilterActive(false);
-  }
-
-  // Открытие формы редактирования продукта
-  function openEditProduct(p) {
-    setEditingProduct(p);
-    setPage("edit_product");
-    setCategoryFilterActive(false);
+    setCategoryFilterActive(true);
+    setProductsForReload(x => x + 1);
+    navigate("/products");
   }
 
   // Удаление продукта
@@ -91,108 +84,266 @@ export default function App() {
       const r = await deleteProduct(p.id);
       if (r.ok) {
         setMsg("✅ Удалено");
-        setProductsForReload(x=>x+1); // Триггер перезагрузки списков
-        setPage("main");
+        setProductsForReload(x => x + 1);
+        navigate("/");
       } else {
         setMsg("Ошибка удаления");
       }
     } catch (e) { setMsg("Ошибка сети"); }
   }
 
-  const showHeader = page !== "login" && page !== "register";
+  // Определяем показывать ли header
+  const showHeader = location.pathname !== "/login" && location.pathname !== "/register";
 
   return (
     <div className="app">
-
       {showHeader && (
-        <>
-          <Header
-            user={user}
-            onNavigate={navigate}
-            onLogout={handleLogout}
-            query={query}
-            setQuery={setQuery}
-            onSearch={() => { setCategoryFilterActive(false); setPage("all"); setProductsForReload(x => x + 1); }}
-          />
-        </>
+        <Header
+          user={user}
+          onNavigate={(path) => {
+            setMsg(null);
+            setCategoryFilterActive(false);
+            const route = path === "main" ? "" : path === "all" ? "products" : path;
+            navigate(`/${route}`);
+          }}
+          onLogout={handleLogout}
+          query={query}
+          setQuery={setQuery}
+          onSearch={() => {
+            setCategoryFilterActive(false);
+            setProductsForReload(x => x + 1);
+            navigate("/products");
+          }}
+        />
       )}
 
       <Msg text={msg} />
 
-      {page === "main" && <MainPage key={productsForReload} q={query} user={user}
-        onOpen={p => openProductView(p)}
-        onEdit={p => openEditProduct(p)}
-        onDelete={p => handleDelete(p)}
-        onNavigate={navigate}
-        onSelectCategory={handleSelectCategory}
-      />}
-
-      {page === "all" && <ProductsList key={productsForReload} q={query} user={user}
-        categoryFilterActive={categoryFilterActive}
-        onOpen={p => openProductView(p)}
-        category={selectedCategory}
-        onEdit={p => openEditProduct(p)}
-        onDelete={p => handleDelete(p)}
-      />}
-
-      {page === "categories" && <Categories onNavigate={navigate} onSelectCategory={handleSelectCategory} />}
-
-      {page === "login" && <LoginForm onNavigate={navigate} setMsg={setMsg} onSuccess={() => { loadMe(); setPage("main"); }} />}
-
-      {page === "register" && <RegisterForm setMsg={setMsg} onNavigate={navigate} onSuccess={() => setPage("login")} />}
-
-      {page === "my" && user && <ProductsList q={query} user={user} my={true}
-        onOpen={p => openProductView(p)}
-        onEdit={p => openEditProduct(p)}
-        onDelete={p => handleDelete(p)}
-        onNavigate={navigate}
-      />}
-
-      {page == "cart" && <CartPage onNavigate={navigate} onCheckout={(cart) => { navigate("checkout") }} />}
-
-      {page == "faqs" && <Fags onNavigate={navigate} />}
-
-      {page === "checkout" && <CheckoutPage onNavigate={navigate} />}
-
-      {page === "create_product" && user && user.role === "farmer" && (
-        <ProductForm
-          user={user}
-          onDone={(p) => { setMsg("✅ Товар создан"); setPage("product_details"); setOpenProduct(p); }}
-          onCancel={() => setPage("all")}
-          setMsg={setMsg}
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <MainPage
+              key={productsForReload}
+              q={query}
+              user={user}
+              onOpen={(p) => navigate(`/product/${p.id}`)}
+              onEdit={(p) => navigate(`/edit-product/${p.id}`, { state: { product: p } })}
+              onDelete={handleDelete}
+              onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)}
+              onSelectCategory={handleSelectCategory}
+            />
+          }
         />
-      )}
-      {page === "create_sensor" && user && user.role === "farmer" && (
-        <CreateSensorForm
-          user={user}
-          onDone={() => {
-            setMsg("Датчик создан");
-            setPage("my");
-          }}
-          onCancel={() => setPage("my")}
-          setMsg={setMsg}
+
+        <Route
+          path="/products"
+          element={
+            <ProductsList
+              key={productsForReload}
+              q={query}
+              user={user}
+              categoryFilterActive={categoryFilterActive}
+              onOpen={(p) => navigate(`/product/${p.id}`)}
+              category={selectedCategory}
+              onEdit={(p) => navigate(`/edit-product/${p.id}`, { state: { product: p } })}
+              onDelete={handleDelete}
+              onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)}
+            />
+          }
         />
-      )}
 
-      {page === "edit_product" && editingProduct && (
-        <ProductForm
-          initial={editingProduct}
-          user={user}
-          onDone={(p) => { setMsg("✅ Сохранено"); setPage("my"); }}
-          onCancel={() => setPage("my")}
-          setMsg={setMsg}
+        <Route
+          path="/categories"
+          element={
+            <Categories
+              onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)}
+              onSelectCategory={handleSelectCategory}
+            />
+          }
         />
-      )}
 
-      {page === "create_farm" && user && user.role === "farmer" && <CreateFarm user={user} onDone={() => setPage("all")} onCancel={() => setPage("my")} setMsg={setMsg} />}
+        <Route
+          path="/login"
+          element={
+            <LoginForm
+              onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)}
+              setMsg={setMsg}
+              onSuccess={() => {
+                loadMe();
+                navigate("/");
+              }}
+            />
+          }
+        />
 
-      {page === "product_details" && openProduct && <ProductDetails onNavigate={navigate} productId={openProduct.id} onClose={() => setPage("all")} setMsg={setMsg} />}
+        <Route
+          path="/register"
+          element={
+            <RegisterForm
+              setMsg={setMsg}
+              onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)}
+              onSuccess={() => navigate("/login")}
+            />
+          }
+        />
 
-      {page === "profile" && <Profile user={user}  onNavigate={navigate}/>}
+        <Route
+          path="/my"
+          element={
+            user ? (
+              <ProductsList
+                q={query}
+                user={user}
+                my={true}
+                onOpen={(p) => navigate(`/product/${p.id}`)}
+                onEdit={(p) => navigate(`/edit-product/${p.id}`, { state: { product: p } })}
+                onDelete={handleDelete}
+                onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)}
+              />
+            ) : (
+              <div className="form">Войдите, чтобы просматривать ваши товары</div>
+            )
+          }
+        />
 
-      {page === "success" && <SuccessPage onNavigate={navigate}/>}
+        <Route
+          path="/cart"
+          element={
+            <CartPage
+              onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)}
+              onCheckout={() => navigate("/checkout")}
+            />
+          }
+        />
 
-      {!user && page === "my" && <div className="form">Войдите, чтобы просматривать ваши товары</div>}
+        <Route
+          path="/faqs"
+          element={<Fags onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)} />}
+        />
+
+        <Route
+          path="/checkout"
+          element={<CheckoutPage onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)} />}
+        />
+
+        <Route
+          path="/create-product"
+          element={
+            user && user.role === "farmer" ? (
+              <ProductForm
+                user={user}
+                onDone={(p) => {
+                  setMsg("✅ Товар создан");
+                  navigate(`/product/${p.id}`);
+                }}
+                onCancel={() => navigate("/products")}
+                setMsg={setMsg}
+              />
+            ) : (
+              <div className="form">Только фермеры могут создавать товары</div>
+            )
+          }
+        />
+
+        <Route
+          path="/create-sensor"
+          element={
+            user && user.role === "farmer" ? (
+              <CreateSensorForm
+                user={user}
+                onDone={() => {
+                  setMsg("Датчик создан");
+                  navigate("/my");
+                }}
+                onCancel={() => navigate("/my")}
+                setMsg={setMsg}
+              />
+            ) : (
+              <div className="form">Только фермеры могут создавать датчики</div>
+            )
+          }
+        />
+
+        <Route
+          path="/edit-product/:id"
+          element={<EditProductWrapper user={user} setMsg={setMsg} />}
+        />
+
+        <Route
+          path="/create-farm"
+          element={
+            user && user.role === "farmer" ? (
+              <CreateFarm
+                user={user}
+                onDone={() => navigate("/products")}
+                onCancel={() => navigate("/my")}
+                setMsg={setMsg}
+              />
+            ) : (
+              <div className="form">Только фермеры могут создавать фермы</div>
+            )
+          }
+        />
+
+        <Route
+          path="/product/:id"
+          element={<ProductDetailsWrapper setMsg={setMsg} />}
+        />
+
+        <Route
+          path="/profile"
+          element={<Profile user={user} onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)} />}
+        />
+
+        <Route
+          path="/success"
+          element={<SuccessPage onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)} />}
+        />
+      </Routes>
     </div>
+  );
+}
+
+// Обёртка для редактирования продукта
+function EditProductWrapper({ user, setMsg }) {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Получаем продукт из location state или загружаем
+    const locationState = window.history.state?.usr;
+    if (locationState?.product) {
+      setProduct(locationState.product);
+      setLoading(false);
+    } else {
+      // Можно добавить загрузку продукта по ID
+      navigate("/my");
+    }
+  }, [id, navigate]);
+
+  if (loading) return <div>Загрузка...</div>;
+
+  return (
+    <ProductForm
+      initial={product}
+      user={user}
+      onDone={() => {
+        setMsg("✅ Сохранено");
+        navigate("/my");
+      }}
+      onCancel={() => navigate("/my")}
+      setMsg={setMsg}
+    />
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }

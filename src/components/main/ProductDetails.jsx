@@ -588,29 +588,41 @@ function SensorDataPanel({ product, passport }) {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col lg:flex-row sm:flex-col gap-2">
             <div className="text-sm text-gray-500 mr-2">Показатель:</div>
-            <div className="flex gap-1">
+
+            <div 
+              className={`
+                flex gap-2 
+                overflow-x-auto 
+                no-scrollbar 
+                py-1
+              `}
+            >
               {[
                 { key: "temperature", label: "Температура", unit: "°C" },
                 { key: "humidity", label: "Влажность", unit: "%" },
                 { key: "ph", label: "pH", unit: "" },
                 { key: "salinity", label: "Соленость", unit: "мСм/см" }
               ].map(m => (
-                <button 
+                <button
                   key={m.key}
                   onClick={() => setMetric(m.key)}
-                  className={`px-3 py-1 rounded text-sm font-medium ${
-                    metric === m.key 
-                      ? 'bg-[#3E8D43] text-white' 
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
+                  className={`
+                    px-3 py-1 rounded text-sm whitespace-nowrap font-medium
+                    ${
+                      metric === m.key
+                        ? "bg-[#3E8D43] text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }
+                  `}
                 >
                   {m.label}
                 </button>
               ))}
             </div>
           </div>
+
         </div>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-[12px] p-4">
