@@ -34,9 +34,6 @@ export default function LoginForm({ onSuccess, setMsg, onNavigate }) {
       <button onClick={() => onNavigate("main")} className="absolute top-10 left-10 cursor-pointer">
         <img src={back} alt="Назад" className="w-[10px] h-[18px]" />
       </button>
-      <div className="rounded-full absolute left-auto top-10 md:top-28 px-4 py-2 bg-[#D9D9D9]/40">
-        <p className="md:text-white text-black/40">Gryadka ID</p>
-      </div>
       <div className="bg-white p-2 sm:p-15 ml-5 mr-5 rounded-[30px] shadow-none md:shadow-md max-w-[518px] w-full">
         <form onSubmit={submit} className="justify-center items-center w-full">
           <img src={logo} className="w-[62px] h-[50px] justify-center items-center mx-auto mb-5"/>

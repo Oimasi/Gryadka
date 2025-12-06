@@ -53,6 +53,11 @@ function AppContent() {
   const [productsForReload, setProductsForReload] = useState(0);
   const [categoryFilterActive, setCategoryFilterActive] = useState(false);
 
+  // Сброс прокрутки при изменении маршрута
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   // Загрузка данных пользователя при запуске приложения
   async function loadMe() {
     const token = readAccessToken();
@@ -189,8 +194,11 @@ function AppContent() {
           element={
             <RegisterForm
               setMsg={setMsg}
-              onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)}
-              onSuccess={() => navigate("/login")}
+              onNavigate={(path) => navigate(`/${path === "main" ? "main" : path === "all" ? "products" : path}`)}
+              onSuccess={() => {
+                loadMe();
+                navigate("/");
+              }}
             />
           }
         />

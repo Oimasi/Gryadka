@@ -1113,14 +1113,23 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
               <div className="mt-4 font-medium">Да</div>
             </div>
           </div>
-          <div className="mt-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="text-[18px] font-medium text-black">Краткая рекомендация от ИИ</div>
+        </div>
+      )}
+
+      {data["Краткая рекомендация от ИИ"] && (
+        <div className="mt-8">
+          <div className="flex items-center gap-3 mb-4">
+            <svg className="w-6 h-6 text-[#3E8D43]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            <div className="text-[18px] font-medium text-black">Рекомендация от ИИ</div>
+          </div>
+          <div className="bg-gradient-to-br from-[#3E8D43]/5 to-[#3E8D43]/10 rounded-[20px] p-6 border border-[#3E8D43]/20">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 bg-[#3E8D43] rounded-full animate-pulse"></div>
+              <div className="text-sm text-[#3E8D43] font-medium">Gryadka AI</div>
             </div>
-            <div className="mt-2 bg-[#F7F7F7] rounded-[20px] p-4">
-              <div className="text-sm text-gray-500">Gryadka AI</div>
-              <div className="mt-4 font-medium">{data["Краткая рекомендация от ИИ"] || "—"}</div>
-            </div>
+            <div className="text-[15px] text-gray-700 leading-relaxed">{data["Краткая рекомендация от ИИ"]}</div>
           </div>
         </div>
       )}

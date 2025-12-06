@@ -147,7 +147,6 @@ function ProductPassportForm({ passport = null, onChange, onAddCertificate, onUp
     d["Фото площадки от шлюза"] = d["Фото площадки от шлюза"] ?? "Нет фото";
     d["Местоположение точки ( координаты участка)"] = d["Местоположение точки ( координаты участка)"] ?? "";
     d["Последние значимые алерты"] = d["Последние значимые алерты"] ?? "";
-    d["Краткая рекомендация от ИИ"] = d["Краткая рекомендация от ИИ"] ?? "";
     onChange && onChange({ ...safePassport, data: d });
   };
   // Отключение датчиков
@@ -536,16 +535,6 @@ function ProductPassportForm({ passport = null, onChange, onAddCertificate, onUp
                   className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
                   value={safePassport.data["Последние значимые алерты"] || ""} 
                   onChange={(e) => setDataKey("Последние значимые алерты", e.target.value)} 
-                />
-              </div>
-              <div className="row mt-5 mb-5">
-                <label className="label" htmlFor="sensor-recommendation">Краткая рекомендация от ИИ</label>
-                <input 
-                  id="sensor-recommendation" 
-                  name="sensor_recommendation" 
-                  className="mt-2 w-full h-[48px] rounded-lg border-1 transition-all duration-150 border-gray-300 px-4 py-2.5 text-[15px] text-[#7D7D7D] placeholder-gray-400 focus:border-[#3C7D40] focus:ring-1 focus:ring-[#3C7D40] focus:outline-none" 
-                  value={safePassport.data["Краткая рекомендация от ИИ"] || ""} 
-                  onChange={(e) => setDataKey("Краткая рекомендация от ИИ", e.target.value)} 
                 />
               </div>
             </div>

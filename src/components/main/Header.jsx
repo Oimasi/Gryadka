@@ -149,7 +149,7 @@ export default function Header({ user, onNavigate, onLogout, query, setQuery, on
           >
             <Link 
               to="/" 
-              className={`py-2 px-4 border-1 transition-all duration-150 rounded-xl ${
+              className={`py-2 px-4 border-1 transition-all duration-150 rounded-xl flex items-center justify-center shrink-0 ${
                 isActive("/") && location.pathname === "/" 
                   ? "bg-[#3E8D43] text-white border-[#3E8D43]" 
                   : "text-[#2e7433] border-[#3E8D43] hover:bg-[#3E8D43] hover:text-white active:bg-[#3E8D43] active:text-white"

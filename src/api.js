@@ -86,6 +86,9 @@ export async function register(payload) {
     credentials: "include"
   });
   const j = await res.json().catch(() => null);
+  if (res.ok && j && j.access_token) {
+    saveAccessToken(j.access_token);
+  }
   return { ok: res.ok, status: res.status, data: j };
 }
 

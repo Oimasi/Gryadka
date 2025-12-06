@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { register } from "../../api";
+import { register, login, saveAccessToken } from "../../api";
 import Dropdown from "../ui/dropdown";
 import logo from "/images/logotype.png"
 import back from "/images/back-button.svg"
@@ -24,16 +24,24 @@ export default function RegisterForm({ onSuccess, setMsg, onNavigate }) {
       const r = await register({ email, password, first_name: first, last_name: last, role });
 
       if (r.ok) {
-        setMsg && setMsg("✅ Регистрация успешна. Войдите.");
-        onSuccess && onSuccess(); 
+        const loginResult = await login({ email, password });
+        if (loginResult.ok) {
+          const token = loginResult.data?.access_token;
+          if (token) saveAccessToken(token);
+          setMsg && setMsg("Регистрация успешна!");
+          onSuccess && onSuccess();
+        } else {
+          setMsg && setMsg("Регистрация успешна. Войдите.");
+          onSuccess && onSuccess();
+        }
       } else {
         const detail = r.data?.detail || JSON.stringify(r.data) || "Ошибка регистрации";
         setMsg && setMsg(detail);
       }
-      } catch (err) {
-        setMsg && setMsg("Ошибка сети");
-      } finally {
-        setLoading(false);
+    } catch (err) {
+      setMsg && setMsg("Ошибка сети");
+    } finally {
+      setLoading(false);
     }
   }
   return (
@@ -41,9 +49,6 @@ export default function RegisterForm({ onSuccess, setMsg, onNavigate }) {
       <button onClick={() => onNavigate("main")} className="absolute top-10 left-10 cursor-pointer">
         <img src={back} alt="Назад" className="w-[10px] h-[18px]" />
       </button>
-      <div className="rounded-full absolute left-auto top-10 md:top-16 px-4 py-2 bg-[#D9D9D9]/40">
-        <p className="md:text-white text-black/40">Gryadka ID</p>
-      </div>
       <div className="bg-white p-2 sm:p-15 ml-5 mr-5 rounded-[30px] shadow-none md:shadow-md max-w-[518px] w-full mt-35 mb-35">
         <form className="justify-center items-center w-full" onSubmit={submit} noValidate>
           <img src={logo} className="w-[62px] h-[50px] justify-center items-center mx-auto mb-5"/>
