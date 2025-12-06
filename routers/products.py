@@ -23,6 +23,7 @@ from schemas.product import (
 from models.user import User as UserModel
 from utils.auth import get_current_user, get_current_user_optional
 from urllib.parse import quote as _urlquote
+from utils import ai_recommendation
 
 logger = logging.getLogger("products_router")
 router = APIRouter(prefix="/api/products", tags=["products"])
@@ -249,6 +250,50 @@ def create_product(payload: ProductCreate, current_user: UserModel = Depends(get
         except Exception as exc:
             logger.exception("Error processing passport payload for product %s: %s", product.id, exc)
 
+    # Генерация ИИ рекомендации для собранных товаров
+    if not product.is_growing:
+        try:
+            # Получаем паспорт, если он был создан
+            passport = db.query(ProductPassport).filter(ProductPassport.product_id == product.id).first()
+            
+            # Если рекомендация еще не была сгенерирована
+            if passport and passport.data:
+                existing_recommendation = passport.data.get("Краткая рекомендация от ИИ")
+                if not existing_recommendation or existing_recommendation.strip() == "":
+                    # Формируем данные паспорта для генерации
+                    passport_data = {
+                        "origin": passport.origin,
+                        "variety": passport.variety,
+                        "harvest_date": passport.harvest_date.isoformat() if passport.harvest_date else None,
+                        "certifications": passport.certifications or [],
+                        "data": passport.data or {}
+                    }
+                    
+                    # Генерируем рекомендацию
+                    recommendation = ai_recommendation.generate_product_recommendation(
+                        product_name=product.name,
+                        product_category=product.category or "",
+                        short_description=product.short_description or "",
+                        passport_data=passport_data
+                    )
+                    
+                    if recommendation:
+                        # Обновляем паспорт с новой рекомендацией
+                        passport_data_update = passport.data.copy()
+                        passport_data_update["Краткая рекомендация от ИИ"] = recommendation
+                        passport.data = passport_data_update
+                        db.add(passport)
+                        try:
+                            db.commit()
+                            db.refresh(passport)
+                            logger.info(f"Successfully generated AI recommendation for product {product.id}")
+                        except Exception as exc:
+                            db.rollback()
+                            logger.exception(f"Failed to save AI recommendation for product {product.id}: {exc}")
+                    else:
+                        logger.warning(f"Failed to generate AI recommendation for product {product.id}")
+        except Exception as exc:
+            logger.exception(f"Error generating AI recommendation for product {product.id}: {exc}")
     
     for m in getattr(product, "media", []) or []:
         if m.is_primary:
@@ -480,6 +525,44 @@ def upsert_passport(product_id: int, payload: ProductPassportCreate = Body(...),
             db.rollback()
             logger.exception("Failed to update passport for product %s: %s", product_id, exc)
             raise HTTPException(status_code=500, detail="Failed to update passport")
+        
+        # Генерация ИИ рекомендации для собранных товаров
+        if not product.is_growing:
+            try:
+                existing_recommendation = passport.data.get("Краткая рекомендация от ИИ") if passport.data else None
+                if not existing_recommendation or existing_recommendation.strip() == "":
+                    passport_data_for_ai = {
+                        "origin": passport.origin,
+                        "variety": passport.variety,
+                        "harvest_date": passport.harvest_date.isoformat() if passport.harvest_date else None,
+                        "certifications": passport.certifications or [],
+                        "data": passport.data or {}
+                    }
+                    
+                    recommendation = ai_recommendation.generate_product_recommendation(
+                        product_name=product.name,
+                        product_category=product.category or "",
+                        short_description=product.short_description or "",
+                        passport_data=passport_data_for_ai
+                    )
+                    
+                    if recommendation:
+                        passport_data_update = passport.data.copy() if passport.data else {}
+                        passport_data_update["Краткая рекомендация от ИИ"] = recommendation
+                        passport.data = passport_data_update
+                        db.add(passport)
+                        try:
+                            db.commit()
+                            db.refresh(passport)
+                            logger.info(f"Successfully generated AI recommendation for product {product_id}")
+                        except Exception as exc:
+                            db.rollback()
+                            logger.exception(f"Failed to save AI recommendation for product {product_id}: {exc}")
+                    else:
+                        logger.warning(f"Failed to generate AI recommendation for product {product_id}")
+            except Exception as exc:
+                logger.exception(f"Error generating AI recommendation for product {product_id}: {exc}")
+        
         return passport
 
     
@@ -492,6 +575,44 @@ def upsert_passport(product_id: int, payload: ProductPassportCreate = Body(...),
         db.rollback()
         logger.exception("Failed to create passport for product %s: %s", product_id, exc)
         raise HTTPException(status_code=500, detail="Failed to create passport")
+    
+    # Генерация ИИ рекомендации для собранных товаров после создания паспорта
+    if not product.is_growing:
+        try:
+            existing_recommendation = passport.data.get("Краткая рекомендация от ИИ") if passport.data else None
+            if not existing_recommendation or existing_recommendation.strip() == "":
+                passport_data_for_ai = {
+                    "origin": passport.origin,
+                    "variety": passport.variety,
+                    "harvest_date": passport.harvest_date.isoformat() if passport.harvest_date else None,
+                    "certifications": passport.certifications or [],
+                    "data": passport.data or {}
+                }
+                
+                recommendation = ai_recommendation.generate_product_recommendation(
+                    product_name=product.name,
+                    product_category=product.category or "",
+                    short_description=product.short_description or "",
+                    passport_data=passport_data_for_ai
+                )
+                
+                if recommendation:
+                    passport_data_update = passport.data.copy() if passport.data else {}
+                    passport_data_update["Краткая рекомендация от ИИ"] = recommendation
+                    passport.data = passport_data_update
+                    db.add(passport)
+                    try:
+                        db.commit()
+                        db.refresh(passport)
+                        logger.info(f"Successfully generated AI recommendation for product {product_id}")
+                    except Exception as exc:
+                        db.rollback()
+                        logger.exception(f"Failed to save AI recommendation for product {product_id}: {exc}")
+                else:
+                    logger.warning(f"Failed to generate AI recommendation for product {product_id}")
+        except Exception as exc:
+            logger.exception(f"Error generating AI recommendation for product {product_id}: {exc}")
+    
     return passport
 
 

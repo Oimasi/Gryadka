@@ -1,10 +1,7 @@
 {
   "CORSRules": [
     {
-      "AllowedOrigins": [
-        "https://gryadka.tech",
-        "http://localhost:5173"
-      ],
+      "AllowedOrigins": ["*"],
       "AllowedMethods": [
         "PUT",
         "GET",
@@ -13,12 +10,8 @@
         "DELETE",
         "OPTIONS"
       ],
-      "AllowedHeaders": [
-        "*"
-      ],
-      "ExposeHeaders": [
-        "ETag"
-      ],
+      "AllowedHeaders": ["*"],
+      "ExposeHeaders": ["ETag"],
       "MaxAgeSeconds": 3000
     }
   ]

@@ -26,6 +26,11 @@ from routers import products as products_router
 from routers import farms as farms_router  
 from routers import sensors as sensors_router
 from sqlalchemy.orm import relationship
+from fastapi.middleware.cors import CORSMiddleware
+
+
+
+
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -41,6 +46,23 @@ app.include_router(products_router.router)
 if os.getenv("SKIP_CREATE_ALL", "false").lower() != "true":
     # Создание таблиц в базе данных для разработки
     Base.metadata.create_all(bind=engine)
+
+    
+origins = [
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:5173",   
+    "http://127.0.0.1:5173",
+    "https://gryadka.tech",    
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,        
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
