@@ -10,6 +10,7 @@ import importlib
 from uuid import uuid4
 from datetime import datetime
 from fastapi import Response
+from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 from database.database import get_db
 from models.sensor import SensorDevice
 from schemas.sensor import SensorDeviceOut
@@ -111,6 +112,25 @@ def _coerce_empty_to_none(value):
     return value
 
 
+def _apply_price_markup(raw_price) -> Decimal:
+    """
+    Прибавляет 15% к цене, округляя до копеек.
+    Используем целочисленную арифметику в копейках для избежания погрешностей.
+    """
+    try:
+        base = Decimal(str(raw_price))
+    except (InvalidOperation, ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid price format")
+
+    if base <= 0:
+        raise HTTPException(status_code=400, detail="Price must be positive")
+
+    # Конвертируем в копейки (целое), умножаем на 115, делим на 100 с округлением
+    kopecks = int((base * 100).to_integral_value(rounding=ROUND_HALF_UP))
+    marked_up_kopecks = (kopecks * 115 + 50) // 100  # +50 для округления к ближайшему
+    return Decimal(marked_up_kopecks) / Decimal(100)
+
+
 @router.get("/me", response_model=List[ProductOut])
 def my_products(current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
     """
@@ -167,15 +187,20 @@ def create_product(payload: ProductCreate, current_user: UserModel = Depends(get
             raise HTTPException(status_code=403, detail="Cannot create product for this farm")
         final_farm_id = payload.farm_id
 
+    # Применяем наценку 15% перед сохранением
+    final_price = _apply_price_markup(payload.price)
+
     product = Product(
         name=payload.name,
         short_description=getattr(payload, "short_description", "") or "",
-        price=payload.price,
+        price=final_price,
         category=payload.category,
         owner_id=current_user.id,
         farm_id=final_farm_id,
         is_active=bool(getattr(payload, "is_active", True)),
-        is_growing=bool(getattr(payload, "is_growing", False)) 
+        is_growing=bool(getattr(payload, "is_growing", False)),
+        is_halal=bool(getattr(payload, "is_halal", False)),
+        is_lenten=bool(getattr(payload, "is_lenten", False)),
     )
     db.add(product)
     try:
@@ -416,6 +441,10 @@ def update_product(product_id: int, payload: ProductUpdate, current_user: UserMo
     for field, value in payload.dict(exclude_unset=True).items():
         if field == "owner_id":
             continue
+        if field == "price":
+            if value is None:
+                continue
+            value = _apply_price_markup(value)
         setattr(product, field, value)
         changed = True
         

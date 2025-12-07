@@ -55,6 +55,8 @@ def create_farm(farm_data: farm_schema.FarmCreate,
         name=farm_data.name,
         description=farm_data.description,
         owner_id=farm_data.owner_id,
+        latitude=farm_data.latitude,
+        longitude=farm_data.longitude,
     )
     db.add(db_farm)
     try:

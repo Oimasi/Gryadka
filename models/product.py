@@ -27,6 +27,8 @@ class Product(Base):
     farm_id = Column(Integer, ForeignKey("farms.id", ondelete="SET NULL"), nullable=True, index=True)
 
     is_active = Column(Boolean, nullable=False, default=True, index=True)
+    is_halal = Column(Boolean, nullable=False, default=False, index=True)
+    is_lenten = Column(Boolean, nullable=False, default=False, index=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 

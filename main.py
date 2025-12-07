@@ -25,6 +25,7 @@ from routers import auth as auth_router
 from routers import products as products_router
 from routers import farms as farms_router  
 from routers import sensors as sensors_router
+from routers import gamification as gamification_router
 from sqlalchemy.orm import relationship
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -43,6 +44,7 @@ app.include_router(auth_router.router)
 app.include_router(sensors_router.router)
 app.include_router(farms_router.router)
 app.include_router(products_router.router)
+app.include_router(gamification_router.router)
 if os.getenv("SKIP_CREATE_ALL", "false").lower() != "true":
     # Создание таблиц в базе данных для разработки
     Base.metadata.create_all(bind=engine)

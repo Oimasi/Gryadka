@@ -99,6 +99,8 @@ class ProductCreate(BaseModel):
     passport: Optional[ProductPassportCreate] = None
     is_active: Optional[bool] = True
     is_growing: Optional[bool] = False
+    is_halal: Optional[bool] = False
+    is_lenten: Optional[bool] = False
     sensor_id: Optional[int] = None
 
 
@@ -110,6 +112,8 @@ class ProductUpdate(BaseModel):
     is_active: Optional[bool] = None
     farm_id: Optional[int] = None   # разрешаем менять farm
     is_growing: Optional[bool] = None
+    is_halal: Optional[bool] = None
+    is_lenten: Optional[bool] = None
 
 
 class ProductOut(BaseModel):
@@ -122,6 +126,8 @@ class ProductOut(BaseModel):
     farm_id: Optional[int] = None
     farm_name: Optional[str] = None  
     is_active: bool
+    is_halal: bool
+    is_lenten: bool
     passport: Optional[ProductPassportOut]
     media: List[ProductMediaOut] = []
     is_growing: bool
@@ -129,3 +135,6 @@ class ProductOut(BaseModel):
 
     class Config:
         orm_mode = True
+        json_encoders = {
+            Decimal: lambda v: float(round(v, 2))
+        }

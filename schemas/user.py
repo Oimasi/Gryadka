@@ -49,6 +49,7 @@ class User(BaseModel):
         last_name (str): Фамилия пользователя.
         middle_name (Optional[str]): Отчество пользователя (может быть null).
         role (str): Роль пользователя.
+        balance (int): Игровой баланс пользователя.
     """
     id: int
     email: EmailStr
@@ -56,6 +57,7 @@ class User(BaseModel):
     last_name: str
     middle_name: Optional[str]
     role: str
+    balance: int = 1000
 
     class Config:
         orm_mode = True

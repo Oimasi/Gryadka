@@ -36,6 +36,7 @@ class User(Base):
     last_name = Column(String(100), nullable=False)
     middle_name = Column(String(100), nullable=True)
     role = Column(String(30), default="consumer", nullable=False)
+    balance = Column(Integer, default=1000, nullable=False)  # Игровой баланс (1000 по умолчанию)
 
     def __repr__(self):
         return f"<User id={self.id} email={self.email} role={self.role}>"
