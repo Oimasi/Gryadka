@@ -11,18 +11,12 @@ import image4 from "/images/image4.png";
 import image5 from "/images/image5.png";
 import image6 from "/images/image6.png";
 import berries from "/images/berries.png";
-import item1 from "/images/item1.png";
-import item2 from "/images/item1-1.png";
-import item3 from "/images/item1-2.png";
-import item4 from "/images/item1-3.png";
-import item5 from "/images/item1-4.png";
-import ProfileDropdown from "../ui/profiledropdown";
+import FarmsMap from "./FarmsMap";
 
 export default function MainPage({ q, user, onOpen, onEdit, onNavigate, onDelete, my = false, onSelectCategory }) {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const sliderRef1 = useRef(null);
-  const sliderRef2 = useRef(null);
 
 
   const isDraggingRef = useRef(false);
@@ -120,39 +114,19 @@ export default function MainPage({ q, user, onOpen, onEdit, onNavigate, onDelete
 
   useEffect(() => {
     const cleanup1 = initDragScroll(sliderRef1);
-    const cleanup2 = initDragScroll(sliderRef2);
     return () => {
       cleanup1 && cleanup1();
-      cleanup2 && cleanup2();
     };
   }, []);
   function handleSelectCategoryLocal(name) {
     if (onSelectCategory) {
       onSelectCategory(name);
-    } else {
-      onNavigate && onNavigate("all");
+    } else if (onNavigate) {
+      onNavigate("all");
     }
   }
 
   function makeCardProps(name) {
-    return {
-      role: "button",
-      tabIndex: 0,
-      onClick: () => handleSelectCategoryLocal(name),
-      onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelectCategoryLocal(name); } },
-      className: "flex-shrink-0 flex-col w-[311px] h-[217px] bg-[#ffffff] transition-all duration-150 rounded-[20px] flex text-left p-[27px] border-1 border-[#e7e7e7] cursor-pointer hover:bg-[#f5f5f5]/60 active:bg-[#f5f5f5]/60"
-    };
-  }
-
-    function handleSelectCategoryLocal(name) {
-    if (onSelectCategory) {
-      onSelectCategory(name);
-    } else {
-      onNavigate && onNavigate("all");
-    }
-  }
-
-    function makeCardProps(name) {
     return {
       role: "button",
       tabIndex: 0,
@@ -255,31 +229,7 @@ return (
       </section>
 
       <section className="mt-10">
-        <div className="flex flex-row">
-          <a className="text-[20px] text-black transition-all duration-150 font-medium">Фермы рядом</a>
-          <img src={arrow} className="mt-2.5 ml-1.5 mb-6 w-[17px] h-[12px]"/>
-        </div>
-        <div className="relative max-w-[1330px] mx-auto">
-          <div
-            ref={sliderRef2}
-            className="flex gap-4 py-2 overflow-x-scroll select-none cursor-grab scrollbar-hide">
-            <div className="flex-shrink-0 flex-col w-[311px] h-[100px]">
-              <img src={item1} className="select-none pointer-events-none"/>
-            </div>
-            <div className="flex-shrink-0 flex-col w-[311px] h-[100px]">
-              <img src={item2} className="select-none pointer-events-none"/>
-            </div>
-            <div className="flex-shrink-0 flex-col w-[311px] h-[100px]">
-              <img src={item3} className="select-none pointer-events-none"/>
-            </div>
-            <div className="flex-shrink-0 flex-col w-[311px] h-[100px]">
-              <img src={item4} className="select-none pointer-events-none"/>
-            </div>
-            <div className="flex-shrink-0 flex-col w-[311px] h-[100px]">
-              <img src={item5} className="select-none pointer-events-none"/>
-            </div>
-          </div>
-        </div>
+        <FarmsMap />
       </section>
       
       <section className="mt-13">

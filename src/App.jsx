@@ -19,6 +19,7 @@ import SuccessPage from "./components/main/Success";
 import Fags from "./components/main/Faqs";
 import CreateSensorForm from "./components/main/CreateSensorForm";
 import ProductQRPage from "./components/main/ProductQRPage";
+import MyPlants from "./components/main/MyPlants";
 
 // Обёртка для страницы продукта с параметром из URL
 function ProductDetailsWrapper({ setMsg }) {
@@ -314,6 +315,11 @@ function AppContent() {
         <Route
           path="/profile"
           element={<Profile user={user} onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)} />}
+        />
+
+        <Route
+          path="/my-plants"
+          element={<MyPlants user={user} onNavigate={(path) => navigate(`/${path === "main" ? "" : path === "all" ? "products" : path}`)} />}
         />
 
         <Route

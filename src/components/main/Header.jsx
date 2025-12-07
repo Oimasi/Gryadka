@@ -57,32 +57,87 @@ export default function Header({ user, onNavigate, onLogout, query, setQuery, on
   }, []);  
 
   useEffect(() => {
+    let cancelled = false;
+    let resolved = false;
+    const DEFAULT_ADDRESS = "г. Москва";
+
+    const setAddressSafe = (value) => {
+      if (cancelled) return;
+      resolved = true;
+      setAddress(value);
+      setError(null);
+    };
+
+    const setErrorSafe = (value) => {
+      if (cancelled) return;
+      resolved = true;
+      // Вместо ошибки всегда показываем запасной адрес
+      setAddress(DEFAULT_ADDRESS);
+      setError(value);
+    };
+
+    const fallbackByIp = async () => {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        const data = await res.json();
+        if (data?.city || data?.region) {
+          const city = data.city || data.region;
+          const area = data.region || data.country_name || "";
+          setAddressSafe(`г. ${city}, ${area}`);
+        } else {
+          setAddressSafe(DEFAULT_ADDRESS);
+        }
+      } catch (err) {
+        setAddressSafe(DEFAULT_ADDRESS);
+      }
+    };
+
+    const reverseGeocode = async (latitude, longitude) => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
+        const data = await res.json();
+        if (data?.address) {
+          const city = data.address.city || data.address.town || data.address.village || data.address.county;
+          const road = data.address.road || data.address.neighbourhood || data.address.suburb || "";
+          setAddressSafe(`г. ${city || "неизвестно"}, ул. ${road || "неизвестно"}`);
+        } else {
+          setAddressSafe(DEFAULT_ADDRESS);
+          fallbackByIp();
+        }
+      } catch (e) {
+        setAddressSafe(DEFAULT_ADDRESS);
+        fallbackByIp();
+      }
+    };
+
     if (!navigator.geolocation) {
-      setError("Геолокация не поддерживается браузером");
-      return;
+      setAddressSafe(DEFAULT_ADDRESS);
+      fallbackByIp();
+      return () => { cancelled = true; };
     }
 
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
+      (position) => {
         const { latitude, longitude } = position.coords;
-
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
-          const data = await res.json();
-
-          if (data && data.address) {
-            const city = data.address.city || data.address.town || data.address.village || data.address.county;
-            const road = data.address.road || data.address.neighbourhood || "";
-            setAddress(`г. ${city || "неизвестно"}, ул. ${road || "неизвестно"}`);
-          } else {
-            setError("Не удалось определить адрес");
-          }
-        } catch (e) {
-          setError("Ошибка при получении адреса");
-        }
+        reverseGeocode(latitude, longitude);
       },
-      (err) => setError("Ошибка получения координат: " + err.message)
+      (err) => {
+        setErrorSafe("Ошибка получения координат: " + err.message);
+        fallbackByIp();
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
+
+    const timeoutId = setTimeout(() => {
+      if (!cancelled && !resolved) {
+        fallbackByIp();
+      }
+    }, 12000);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   useEffect(() => {
@@ -187,6 +242,18 @@ export default function Header({ user, onNavigate, onLogout, query, setQuery, on
             >
               FAQ
             </Link>
+            {user && (
+              <Link 
+                to="/my-plants" 
+                className={`text-[16px] transition-all duration-150 ${
+                  isActive("/my-plants") 
+                    ? "text-black/90" 
+                    : "text-black/50 hover:text-black/90 active:text-black/90"
+                }`}
+              >
+                Мои растения
+              </Link>
+            )}
           </div>
 
           {user?.role === "farmer" && (

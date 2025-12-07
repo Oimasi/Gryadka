@@ -17,6 +17,8 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete, v
   const priceStr = priceVal != null ? `${priceVal.toLocaleString("ru-RU")} ₽` : "100₽";
   const stock = product.stock ?? product.quantity ?? product.available ?? null;
   const inStock = stock == null ? true : stock > 0;
+  const showHalal = Boolean(product.is_halal);
+  const showLenten = Boolean(product.is_lenten);
 
   useEffect(() => {
     let mounted = true;
@@ -143,6 +145,12 @@ export default function ProductCard({ product, user, onOpen, onEdit, onDelete, v
               </p>
               <p className={`${isNews ? 'text-[#A6A6A6] text-[11px]' : 'text-[#A6A6A6] text-[13px]'} font-medium ml-1`}>кг</p>
             </div>
+            {(showHalal || showLenten) && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {showHalal && <span className="text-[11px] sm:text-[12px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Халяль</span>}
+                {showLenten && <span className="text-[11px] sm:text-[12px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">Постное</span>}
+              </div>
+            )}
           </div>
           <div className="mt-3 flex justify-end ml-auto">
             {qty === 0 ? (

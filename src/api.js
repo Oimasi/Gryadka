@@ -7,6 +7,14 @@ export const ENDPOINTS = {
   PRODUCTS: "/api/products",
   FARMS: "/api/farms",
   ME: "/api/users/me",
+  // Gamification
+  GAME: "/api/game",
+  GAME_ITEMS: "/api/game/items",
+  GAME_BALANCE: "/api/game/balance",
+  GAME_ADOPT: "/api/game/adopt",
+  GAME_ADOPTIONS: "/api/game/adoptions",
+  GAME_ACTION: "/api/game/action",
+  GAME_COMMUNITY_GOALS: "/api/game/community-goals",
 };
 
 
@@ -191,4 +199,74 @@ export async function upsertPassport(productId, payload) {
 }
 export async function getPassport(productId) {
   return _fetchJson(`${ENDPOINTS.PRODUCTS}/${productId}/passport`, { method: "GET" });
+}
+
+// === Gamification API ===
+
+export async function getGameItems(category = null) {
+  const params = category ? `?category=${category}` : "";
+  return _fetchJson(`${ENDPOINTS.GAME_ITEMS}${params}`, { method: "GET" });
+}
+
+export async function getBalance() {
+  return _fetchJson(ENDPOINTS.GAME_BALANCE, { method: "GET" });
+}
+
+export async function topUpBalance(amount) {
+  return _fetchJson(`${ENDPOINTS.GAME_BALANCE}/topup`, { 
+    method: "POST", 
+    headers: { "Content-Type": "application/json" }, 
+    body: JSON.stringify({ amount }) 
+  });
+}
+
+export async function adoptProduct(productId, nickname = null) {
+  return _fetchJson(ENDPOINTS.GAME_ADOPT, { 
+    method: "POST", 
+    headers: { "Content-Type": "application/json" }, 
+    body: JSON.stringify({ product_id: productId, nickname }) 
+  });
+}
+
+export async function getMyAdoptions() {
+  return _fetchJson(ENDPOINTS.GAME_ADOPTIONS, { method: "GET" });
+}
+
+export async function deleteAdoption(adoptionId) {
+  const res = await fetchWithAuth(`${ENDPOINTS.GAME_ADOPTIONS}/${adoptionId}`, { method: "DELETE" });
+  return { ok: res.ok, status: res.status };
+}
+
+export async function updateAdoptionNickname(adoptionId, nickname) {
+  return _fetchJson(`${ENDPOINTS.GAME_ADOPTIONS}/${adoptionId}/nickname?nickname=${encodeURIComponent(nickname)}`, { 
+    method: "PATCH"
+  });
+}
+
+export async function performGameAction(productId, itemId) {
+  return _fetchJson(ENDPOINTS.GAME_ACTION, { 
+    method: "POST", 
+    headers: { "Content-Type": "application/json" }, 
+    body: JSON.stringify({ product_id: productId, item_id: itemId }) 
+  });
+}
+
+export async function getProductActions(productId, limit = 50) {
+  return _fetchJson(`${ENDPOINTS.GAME}/actions/${productId}?limit=${limit}`, { method: "GET" });
+}
+
+export async function getMyActions(limit = 100) {
+  return _fetchJson(`${ENDPOINTS.GAME}/my-actions?limit=${limit}`, { method: "GET" });
+}
+
+export async function getProductGrowth(productId) {
+  return _fetchJson(`${ENDPOINTS.GAME}/growth/${productId}`, { method: "GET" });
+}
+
+export async function getUserStats() {
+  return _fetchJson(`${ENDPOINTS.GAME}/stats`, { method: "GET" });
+}
+
+export async function getCommunityGoals() {
+  return _fetchJson(ENDPOINTS.GAME_COMMUNITY_GOALS, { method: "GET" });
 }

@@ -472,21 +472,21 @@ export default function ProductQRPage({ productId }) {
             </div>
             
             <div className="space-y-3">
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-500 text-sm">Происхождение</span>
-                <span className="font-medium text-gray-900">{passport?.origin || "—"}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 gap-1">
+                <span className="text-gray-500 text-sm flex-shrink-0">Происхождение</span>
+                <span className="font-medium text-gray-900 sm:text-right break-words">{passport?.origin || "—"}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-500 text-sm">Сорт / вид</span>
-                <span className="font-medium text-gray-900">{passport?.variety || "—"}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 gap-1">
+                <span className="text-gray-500 text-sm flex-shrink-0">Сорт / вид</span>
+                <span className="font-medium text-gray-900 sm:text-right break-words">{passport?.variety || "—"}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-gray-500 text-sm">Дата сбора</span>
                 <span className="font-medium text-gray-900">{formatDate(passport?.harvest_date)}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-500 text-sm">Артикул</span>
-                <span className="font-medium text-gray-900 text-sm">{product.id}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 gap-1">
+                <span className="text-gray-500 text-sm flex-shrink-0">Артикул</span>
+                <span className="font-medium text-gray-900 text-sm sm:text-right break-all">{product.id}</span>
               </div>
               {coordsLink && (
                 <div className="flex justify-between items-center py-2">
@@ -656,7 +656,7 @@ export default function ProductQRPage({ productId }) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                   </svg>
                 </div>
-                <h2 className="text-lg font-semibold text-gray-900">Сертификаты</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Сертификаты <span className="text-xs font-normal text-gray-400">(данные из системы ВетИС)</span></h2>
               </div>
 
               <div className="space-y-3">

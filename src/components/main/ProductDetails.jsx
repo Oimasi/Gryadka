@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { getProduct, fetchImageAsObjectURL, getPassport, readAccessToken } from "../../api";
+import { getProduct, fetchImageAsObjectURL, getPassport, readAccessToken, adoptProduct, getProductGrowth, getProductActions, getBalance } from "../../api";
 import discount from "/images/discount.svg";
 import { Footer } from "./Footer";
 import { addItem } from "../../hooks/useCart";
 import arrow from "/images/arrow.svg";
+import PlantBoostShop from "./PlantBoostShop";
+import { getUserStats } from "../../api";
 
 function ratingBadge(value) {
   if (!value) return <span className="inline-block px-2 py-1 rounded-full text-sm bg-gray-200 text-gray-800">—</span>;
@@ -106,7 +108,7 @@ function SensorDataPanel({ product, passport }) {
   const hasSensors = sensorDevices.length > 0;
   const [selectedSensorId, setSelectedSensorId] = useState(null);
   const [metric, setMetric] = useState("temperature"); // temperature | ph | salinity | humidity
-  const [timeRange, setTimeRange] = useState("24h"); // 1h, 24h, 7d, all
+  const [timeRange, setTimeRange] = useState("1h"); // 1h, 24h, 7d, all
   const [rawReadings, setRawReadings] = useState([]);
   const [loadingReadings, setLoadingReadings] = useState(false);
   const [readingsError, setReadingsError] = useState(null);
@@ -536,6 +538,46 @@ function SensorDataPanel({ product, passport }) {
     ).join(" ");
   }
 
+  function buildPathMobile() {
+    if (chartData.points.length === 0 || chartData.minX == null || chartData.maxX == null) return "";
+
+    const width = 308; // ширина графика внутри viewBox (340 - 32)
+    const height = 120; // высота графика (130 - 10)
+    const padding = 0;
+    const timeRangeMs = chartData.maxX - chartData.minX;
+
+    if (timeRangeMs === 0) {
+      return chartData.points.map((value, index) => {
+        const x = padding + (index / (chartData.points.length - 1 || 1)) * width;
+        const y = height - ((value - chartData.minValue) / (chartData.maxValue - chartData.minValue || 1)) * height;
+        return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+      }).join(' ');
+    }
+
+    const pathPoints = chartData.points.map((value, index) => {
+      const timestamp = chartData.timestamps[index].getTime();
+      const x = padding + ((timestamp - chartData.minX) / timeRangeMs) * width;
+
+      const rangeY = Math.max(0.1, chartData.maxValue - chartData.minValue);
+      const y = height - ((value - chartData.minValue) / rangeY) * height;
+
+      return { x, y };
+    });
+
+    const validPoints = pathPoints.filter(point => 
+      !isNaN(point.x) && !isNaN(point.y) && 
+      isFinite(point.x) && isFinite(point.y) &&
+      point.x >= -1000 && point.x <= 10000 && 
+      point.y >= -1000 && point.y <= 10000
+    );
+
+    if (validPoints.length === 0) return "";
+
+    return validPoints.map((point, i) => 
+      i === 0 ? `M ${point.x} ${point.y}` : `L ${point.x} ${point.y}`
+    ).join(" ");
+  }
+
   if (!hasSensors) {
     return (
       <div className="mt-6">
@@ -555,61 +597,60 @@ function SensorDataPanel({ product, passport }) {
         <div className="text-[18px] font-medium text-black">Данные с датчиков (мониторинг в реальном времени)</div>
       </div>
       <div className="mt-4 bg-[#F7F7F7] rounded-[20px] p-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="text-sm text-gray-500 mr-2">Датчик:</div>
-            <select
-              value={selectedSensorId || ""}
-              onChange={(e) => setSelectedSensorId(e.target.value)}
-              className="rounded border border-gray-300 px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#3E8D43]"
-            >
-              {sensorDevices.map(sensor => (
-                <option key={sensor.id} value={sensor.id}>
-                  {sensor.name || `Датчик ${sensor.id}`}
-                </option>
-              ))}
-            </select>
-            <div className="text-sm text-gray-500 ml-4 mr-2">Период:</div>
-            <div className="flex gap-1">
-              {["1h", "24h", "7d", "all"].map(range => (
-                <button 
-                  key={range}
-                  onClick={() => setTimeRange(range)}
-                  className={`px-3 py-1 rounded text-sm font-medium ${
-                    timeRange === range 
-                      ? 'bg-[#3E8D43] text-white' 
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  {range === "1h" ? "1 час" : 
-                   range === "24h" ? "24 часа" : 
-                   range === "7d" ? "7 дней" : "Все"}
-                </button>
-              ))}
+        <div className="flex flex-col gap-3 mb-4">
+          {/* Верхняя строка: датчик и период */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-gray-500 whitespace-nowrap">Датчик:</div>
+              <select
+                value={selectedSensorId || ""}
+                onChange={(e) => setSelectedSensorId(e.target.value)}
+                className="flex-1 rounded border border-gray-300 px-2 sm:px-3 py-1.5 sm:py-2 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-[#3E8D43]"
+              >
+                {sensorDevices.map(sensor => (
+                  <option key={sensor.id} value={sensor.id}>
+                    {sensor.name || `Датчик ${sensor.id}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-gray-500 whitespace-nowrap">Период:</div>
+              <div className="flex gap-1 overflow-x-auto no-scrollbar">
+                {["1h", "24h", "7d", "all"].map(range => (
+                  <button 
+                    key={range}
+                    onClick={() => setTimeRange(range)}
+                    className={`px-2 sm:px-3 py-1 rounded text-xs sm:text-sm font-medium whitespace-nowrap ${
+                      timeRange === range 
+                        ? 'bg-[#3E8D43] text-white' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {range === "1h" ? "1ч" : 
+                     range === "24h" ? "24ч" : 
+                     range === "7d" ? "7д" : "Все"}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-          <div className="flex flex-col lg:flex-row sm:flex-col gap-2">
-            <div className="text-sm text-gray-500 mr-2">Показатель:</div>
-
-            <div 
-              className={`
-                flex gap-2 
-                overflow-x-auto 
-                no-scrollbar 
-                py-1
-              `}
-            >
+          
+          {/* Нижняя строка: показатели */}
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-gray-500 whitespace-nowrap">Показатель:</div>
+            <div className="flex gap-1 overflow-x-auto no-scrollbar pb-1">
               {[
-                { key: "temperature", label: "Температура", unit: "°C" },
-                { key: "humidity", label: "Влажность", unit: "%" },
-                { key: "ph", label: "pH", unit: "" },
-                { key: "salinity", label: "Соленость", unit: "мСм/см" }
+                { key: "temperature", label: "Темп.", labelFull: "Температура", unit: "°C" },
+                { key: "humidity", label: "Влаж.", labelFull: "Влажность", unit: "%" },
+                { key: "ph", label: "pH", labelFull: "pH", unit: "" },
+                { key: "salinity", label: "Сол.", labelFull: "Соленость", unit: "мСм/см" }
               ].map(m => (
                 <button
                   key={m.key}
                   onClick={() => setMetric(m.key)}
                   className={`
-                    px-3 py-1 rounded text-sm whitespace-nowrap font-medium
+                    px-2 sm:px-3 py-1 rounded text-xs sm:text-sm whitespace-nowrap font-medium
                     ${
                       metric === m.key
                         ? "bg-[#3E8D43] text-white"
@@ -617,34 +658,43 @@ function SensorDataPanel({ product, passport }) {
                     }
                   `}
                 >
-                  {m.label}
+                  <span className="sm:hidden">{m.label}</span>
+                  <span className="hidden sm:inline">{m.labelFull}</span>
                 </button>
               ))}
             </div>
           </div>
-
         </div>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="mt-4 flex flex-col gap-4">
+          {/* Текущее значение - компактная карточка */}
           <div className="bg-white rounded-[12px] p-4">
-            <div className="text-sm text-gray-500">Текущее значение</div>
-            <div className="text-2xl font-semibold mt-2">
-              {loadingReadings ? "Загрузка..." : 
-               readingsError ? "Ошибка" : 
-               chartData.lastValue !== null ? `${chartData.lastValue} ${metric === "temperature" ? "°C" : metric === "humidity" ? "%" : metric === "ph" ? "" : "мСм/см"}` : "Нет данных"}
-            </div>
-            <div className="text-sm text-gray-600 mt-1">
-              Среднее: <strong>{loadingReadings ? "—" : chartData.avgValue !== null ? chartData.avgValue : "—"}</strong>
-            </div>
-            <div className="text-xs text-gray-400 mt-1">
-              Датчик: {sensorInfo?.name || selectedSensorId}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div className="text-sm text-gray-500">Текущее значение</div>
+                <div className="text-xl sm:text-2xl font-semibold mt-1">
+                  {loadingReadings ? "Загрузка..." : 
+                   readingsError ? "Ошибка" : 
+                   chartData.lastValue !== null ? `${chartData.lastValue} ${metric === "temperature" ? "°C" : metric === "humidity" ? "%" : metric === "ph" ? "" : "мСм/см"}` : "Нет данных"}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-gray-600">
+                  Среднее: <strong>{loadingReadings ? "—" : chartData.avgValue !== null ? chartData.avgValue : "—"}</strong>
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Датчик: {sensorInfo?.name || selectedSensorId}
+                </div>
+              </div>
             </div>
           </div>
-          <div className="col-span-2 bg-white rounded-[12px] p-4">
+          
+          {/* График - полная ширина */}
+          <div className="bg-white rounded-[12px] p-3 sm:p-4">
             <div className="text-sm text-gray-500 mb-2 flex justify-between">
               <span>График ({metric === "temperature" ? "Температура" : metric === "humidity" ? "Влажность" : metric === "ph" ? "pH" : "Соленость"})</span>
               <span className="text-xs">{loadingReadings ? "Обновление..." : `${rawReadings.length} измерений`}</span>
             </div>
-            <div className="mt-3 h-48 flex items-center justify-center">
+            <div className="mt-2 h-40 sm:h-48 flex items-center justify-center overflow-hidden">
               {loadingReadings ? (
                 <div className="text-gray-500">Загрузка данных...</div>
               ) : readingsError ? (
@@ -652,47 +702,47 @@ function SensorDataPanel({ product, passport }) {
               ) : chartData.points.length === 0 ? (
                 <div className="text-gray-500 text-center">Нет данных для отображения</div>
               ) : (
-                <svg width="100%" height="100%" viewBox="0 0 700 180" className="border border-gray-200 rounded">
+                <svg width="100%" height="100%" viewBox="0 0 350 160" preserveAspectRatio="xMidYMid meet" className="border border-gray-200 rounded">
                   <g stroke="#e2e2e2" strokeWidth="1">
                     {[0, 25, 50, 75, 100].map(p => (
                       <line 
                         key={`grid-${p}`} 
-                        x1="40" 
-                        y1={`${140 - (p * 1.4)}`} 
-                        x2="660" 
-                        y2={`${140 - (p * 1.4)}`} 
+                        x1="32" 
+                        y1={`${130 - (p * 1.2)}`} 
+                        x2="340" 
+                        y2={`${130 - (p * 1.2)}`} 
                       />
                     ))}
                   </g>
-                  <g fontSize="10" textAnchor="middle" fill="#666">
+                  <g fontSize="9" textAnchor="middle" fill="#666">
                     {xAxisLabels.map((timestamp, i) => {
                       const timeRangeMs = chartData.maxX - chartData.minX;
                       const x = timeRangeMs > 0 ? 
-                        40 + ((timestamp.getTime() - chartData.minX) / timeRangeMs) * 620 : 
-                        40 + (i / (xAxisLabels.length - 1 || 1)) * 620;
+                        32 + ((timestamp.getTime() - chartData.minX) / timeRangeMs) * 308 : 
+                        32 + (i / (xAxisLabels.length - 1 || 1)) * 308;
                       
                       return (
                         <text 
                           key={`time-${i}`} 
                           x={x}
-                          y="160"
+                          y="150"
                         >
                           {formatTimeLabel(timestamp, timeRange)}
                         </text>
                       );
                     })}
                   </g>
-                  <g fontSize="10" textAnchor="end" fill="#666">
-                    <text x="35" y="140">{chartData.minValue.toFixed(1)}</text>
-                    <text x="35" y="70">{((chartData.maxValue + chartData.minValue) / 2).toFixed(1)}</text>
-                    <text x="35" y="20">{chartData.maxValue.toFixed(1)}</text>
+                  <g fontSize="9" textAnchor="end" fill="#666">
+                    <text x="28" y="130">{chartData.minValue.toFixed(1)}</text>
+                    <text x="28" y="70">{((chartData.maxValue + chartData.minValue) / 2).toFixed(1)}</text>
+                    <text x="28" y="15">{chartData.maxValue.toFixed(1)}</text>
                   </g>
                   <path 
-                    d={buildPath()} 
+                    d={buildPathMobile()} 
                     fill="none" 
                     stroke="#3E8D43" 
-                    strokeWidth="3" 
-                    transform="translate(40, 20)"
+                    strokeWidth="2" 
+                    transform="translate(32, 10)"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
@@ -701,27 +751,66 @@ function SensorDataPanel({ product, passport }) {
             </div>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-[12px] p-4">
-            <div className="text-sm text-gray-500 mb-2">Состояние датчика</div>
-            <div className="flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${sensorInfo?.is_active ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="text-sm font-medium">
-                {sensorInfo?.is_active ? "Активен" : "Неактивен"} • 
-                Последнее обновление: {rawReadings.length > 0 
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-white rounded-[12px] p-3 sm:p-4">
+            <div className="text-xs sm:text-sm text-gray-500 mb-1.5 sm:mb-2">Состояние датчика</div>
+            <div className="flex items-center flex-wrap gap-1">
+              <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full ${sensorInfo?.is_active ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-xs sm:text-sm font-medium">
+                {sensorInfo?.is_active ? "Активен" : "Неактивен"}
+              </span>
+              <span className="text-xs sm:text-sm text-gray-500">
+                • Обновлено: {rawReadings.length > 0 
                   ? formatLocalTime(rawReadings[rawReadings.length - 1].created_at, true)
-                  : (sensorInfo?.last_seen ? formatLocalTime(sensorInfo.last_seen, true) : "неизвестно")}
+                  : (sensorInfo?.last_seen ? formatLocalTime(sensorInfo.last_seen, true) : "—")}
               </span>
             </div>
           </div>
-          <div className="bg-white rounded-[12px] p-4">
-            <div className="text-sm text-gray-500 mb-2">Диапазон значений</div>
-            <div className="text-sm">
-              Мин: <strong>{chartData.minValue.toFixed(1)}</strong> • 
-              Макс: <strong>{chartData.maxValue.toFixed(1)}</strong> • 
-              Размах: <strong>{(chartData.maxValue - chartData.minValue).toFixed(1)}</strong>
+          <div className="bg-white rounded-[12px] p-3 sm:p-4">
+            <div className="text-xs sm:text-sm text-gray-500 mb-1.5 sm:mb-2">Диапазон значений</div>
+            <div className="text-xs sm:text-sm flex flex-wrap gap-x-2 gap-y-1">
+              <span>Мин: <strong>{chartData.minValue.toFixed(1)}</strong></span>
+              <span>Макс: <strong>{chartData.maxValue.toFixed(1)}</strong></span>
+              <span>Размах: <strong>{(chartData.maxValue - chartData.minValue).toFixed(1)}</strong></span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CollapsibleSection({ title, subtitle, isOpen, onToggle, className = "mt-8", children }) {
+  return (
+    <div className={`${className} rounded-[20px] border border-gray-100 bg-white/70 shadow-sm backdrop-blur-sm`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors duration-200 hover:bg-[#F7F7F7]"
+      >
+        <div>
+          <div className="text-[18px] font-semibold text-black flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-[#3E8D43] to-[#9adf9b] shadow-sm" aria-hidden />
+            {title}
+          </div>
+          {subtitle && <div className="text-sm text-gray-500 mt-1">{subtitle}</div>}
+        </div>
+        <div className={`transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </div>
+      </button>
+      <div
+        className={`
+          transition-[max-height,opacity,transform] duration-300 ease-out
+          ${isOpen ? "max-h-[3000px] opacity-100 translate-y-0" : "max-h-0 opacity-0 -translate-y-1 pointer-events-none"}
+          overflow-hidden
+        `}
+      >
+        <div className="px-5 pb-5 pt-1">
+          {children}
         </div>
       </div>
     </div>
@@ -735,6 +824,18 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
   const [loading, setLoading] = useState(true);
   const [imgSrc, setImgSrc] = useState(null);
   const [loadingImg, setLoadingImg] = useState(false);
+  const [openSections, setOpenSections] = useState({
+    sensors: false,
+    certificates: false,
+    extra: false
+  });
+  
+  // Gamification states
+  const [growthInfo, setGrowthInfo] = useState(null);
+  const [productActions, setProductActions] = useState([]);
+  const [adopting, setAdopting] = useState(false);
+  const [showBoostShop, setShowBoostShop] = useState(false);
+  const [userBalance, setUserBalance] = useState(0);
 
   function handleAdd() {
     const next = Math.max(1, qty + 1);
@@ -824,6 +925,51 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
     };
   }, [productId]);
 
+  // Load growth info for growing products
+  useEffect(() => {
+    if (!product?.is_growing) return;
+    
+    const token = readAccessToken();
+    if (!token) return;
+    
+    Promise.all([
+      getProductGrowth(productId),
+      getBalance()
+    ]).then(([growthRes, balanceRes]) => {
+      if (growthRes.ok) {
+        setGrowthInfo(growthRes.data);
+        setProductActions(growthRes.data.recent_actions || []);
+      }
+      if (balanceRes.ok) {
+        setUserBalance(balanceRes.data?.balance || 0);
+      }
+    });
+  }, [product?.is_growing, productId]);
+
+  // Handle adopt
+  async function handleAdopt() {
+    if (userBalance < 300) {
+      setMsg && setMsg("Недостаточно средств. Пополните баланс в разделе 'Мои растения'");
+      return;
+    }
+    
+    setAdopting(true);
+    const res = await adoptProduct(productId);
+    setAdopting(false);
+    
+    if (res.ok) {
+      setGrowthInfo(prev => prev ? { ...prev, is_adopted: true } : null);
+      setUserBalance(prev => prev - 300);
+      setMsg && setMsg("Вы стали опекуном! Растение будет доставлено вам после сбора");
+    } else {
+      if (res.data?.detail?.includes("Insufficient balance")) {
+        setMsg && setMsg("Недостаточно средств. Пополните баланс в разделе 'Мои растения'");
+      } else {
+        setMsg && setMsg(res.data?.detail || "Не удалось стать опекуном");
+      }
+    }
+  }
+
   if (loading) return <div className="max-w-6xl mx-auto p-6">Загрузка...</div>;
   if (!product) return <div className="max-w-6xl mx-auto p-6">Товар не найден</div>;
 
@@ -907,6 +1053,9 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
 
   const isGrowing = !!product?.is_growing;
   const hasActiveSensors = (product?.sensor_devices || []).some(s => s.is_active);
+  const isHalal = Boolean(product?.is_halal);
+  const isLenten = Boolean(product?.is_lenten);
+  const toggleSection = (key) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
 
   return (
     <div className="max-w-[1330px] mx-auto px-4 py-5">
@@ -933,6 +1082,12 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
           <div>
             <p className="text-[16px] text-[#3E8D43]">{product.farm_name || "Ферма"}</p>
             <p className="text-2xl font-bold mt-1">{product.name}</p>
+            {(isHalal || isLenten) && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {isHalal && <span className="inline-block bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium">Халяль</span>}
+                {isLenten && <span className="inline-block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium">Постное</span>}
+              </div>
+            )}
             <p className="mt-3">{renderStars()}</p>
 
             <div className="mt-6 flex flex-col bg-[#F7F7F7] rounded-[20px] p-6 gap-6">
@@ -1006,6 +1161,83 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
         <div className="text-gray-700 text-[15px] leading-relaxed">{product.short_description || "—"}</div>
       </div>
 
+      {/* Прогресс роста + кнопки опекуна */}
+      {isGrowing && (
+        <div className="mt-6 p-4 bg-[#F7F7F7] rounded-[16px]">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-600">Прогресс роста</span>
+            <span className="text-sm font-medium">{growthInfo?.growth_percent || 0}% · День {growthInfo?.days_growing || 0}</span>
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-[#3E8D43] rounded-full transition-all duration-500"
+              style={{ width: `${growthInfo?.growth_percent || 0}%` }}
+            />
+          </div>
+          {growthInfo?.health_score != null && (
+            <div className="mt-3 flex flex-col gap-1 text-sm text-gray-700">
+              <span className="px-2 py-1 rounded-full bg-white text-gray-700 border border-gray-200 w-fit">
+                Здоровье: {growthInfo.health_score}% {growthInfo.health_status ? `· ${growthInfo.health_status}` : ""}
+              </span>
+              {growthInfo.health_history && growthInfo.health_history.length > 0 && (
+                <div className="flex items-end gap-1 h-12">
+                  {growthInfo.health_history.map((p, idx) => (
+                    <div key={idx} title={`${p.date}: ${p.score}%`} className="w-2 flex-1 bg-gray-100 rounded-sm overflow-hidden">
+                      <div className={`${p.score >= 80 ? "bg-green-500" : p.score >= 60 ? "bg-emerald-500" : p.score >= 40 ? "bg-amber-400" : "bg-rose-400"}`} style={{ height: `${Math.max(10, Math.min(100, p.score))}%` }}></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {growthInfo.health_tip && <span className="text-xs text-gray-500">{growthInfo.health_tip}</span>}
+            </div>
+          )}
+          
+          {/* Статус опекуна или кнопка */}
+          <div className="mt-4">
+            {growthInfo?.is_adopted ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-[#3E8D43] rounded-full"></div>
+                  <span className="text-sm text-[#3E8D43] font-medium">Вы опекун этого растения</span>
+                </div>
+                <button
+                  onClick={() => setShowBoostShop(true)}
+                  className="py-2 px-4 bg-[#3E8D43] text-white rounded-[10px] font-medium hover:bg-[#357a3a] transition-colors text-sm"
+                >
+                  Бусты
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleAdopt}
+                  disabled={adopting || !readAccessToken() || userBalance < 300}
+                  className="flex-1 py-2.5 px-4 bg-[#3E8D43] text-white rounded-[10px] font-medium hover:bg-[#357a3a] transition-colors disabled:opacity-50 text-sm"
+                >
+                  {adopting ? "..." : (readAccessToken() ? "Стать опекуном · 300 ₽" : "Войдите")}
+                </button>
+                
+                {/* Подсказка */}
+                <div className="relative group">
+                  <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-200 text-gray-500 text-sm font-medium hover:bg-gray-50">
+                    ?
+                  </button>
+                  <div className="absolute right-0 bottom-full mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-[10px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                    <div className="font-medium mb-1">Что даёт опекунство:</div>
+                    <ul className="space-y-1 text-gray-300">
+                      <li>• Растение будет доставлено вам после сбора</li>
+                      <li>• Вы видите процесс выращивания в реальном времени</li>
+                      <li>• Можете помогать растению бустами</li>
+                    </ul>
+                    <div className="absolute bottom-0 right-4 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900"></div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="mt-8">
         <div className="flex items-center gap-3 mb-4">
           <div className="text-[18px] font-medium text-black">Пищевая ценность на 100г</div>
@@ -1062,15 +1294,25 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
         </div>
       </div>
 
+
       {isGrowing && hasActiveSensors && (
-        <SensorDataPanel product={product} passport={passport} />
+        <CollapsibleSection
+          title="Датчики"
+          subtitle="Мониторинг в реальном времени"
+          isOpen={openSections.sensors}
+          onToggle={() => toggleSection("sensors")}
+        >
+          {openSections.sensors && <SensorDataPanel product={product} passport={passport} />}
+        </CollapsibleSection>
       )}
 
       {!isGrowing && data["Есть датчики"] && (
-        <div className="mt-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="text-[18px] font-medium text-black">Данные с датчиков</div>
-          </div>
+        <CollapsibleSection
+          title="Датчики"
+          subtitle="Сводные данные выращивания"
+          isOpen={openSections.sensors}
+          onToggle={() => toggleSection("sensors")}
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-[#F7F7F7] rounded-[20px] p-4">
               <div className="text-sm text-gray-500">Средний pH</div>
@@ -1113,7 +1355,7 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
               <div className="mt-4 font-medium">Да</div>
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {data["Краткая рекомендация от ИИ"] && (
@@ -1134,8 +1376,12 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
         </div>
       )}
 
-      <div className="mt-8">
-        <div className="text-[18px] font-medium mb-4 text-black">Сертификаты</div>
+      <CollapsibleSection
+        title={<>Сертификаты <span className="text-xs font-normal text-gray-400">(данные из системы ВетИС)</span></>}
+        subtitle="Документы подтверждающие качество"
+        isOpen={openSections.certificates}
+        onToggle={() => toggleSection("certificates")}
+      >
         {certifications && certifications.length > 0 ? (
           <div className="grid gap-3">
             {certifications.map(cert => renderCertificateCard(cert))}
@@ -1143,27 +1389,70 @@ export default function ProductDetails({ productId, onClose, setMsg, onNavigate 
         ) : (
           <div className="text-gray-500 text-md">Сертификаты отсутствуют</div>
         )}
-      </div>
+      </CollapsibleSection>
 
-      <div className="mt-8">
-        <div className="text-[18px] font-medium mb-4 text-black">Дополнительные параметры</div>
+      <CollapsibleSection
+        title="Дополнительные параметры"
+        subtitle="Пользовательские поля паспорта"
+        isOpen={openSections.extra}
+        onToggle={() => toggleSection("extra")}
+      >
         <div className="grid gap-2">
           {Object.entries(data).filter(([k]) => !sensorKeys.has(k)).length === 0 ? (
             <div className="text-gray-500 text-md mt-2">Нет дополнительных параметров</div>
           ) : (
             Object.entries(data).filter(([k]) => !sensorKeys.has(k)).map(([k, v]) => (
-              <div key={k} className="flex justify-between items-center bg-[#F7F7F7] gap-4 rounded-[20px] px-6 py-4">
-                <div className="text-gray-700">{k}</div>
-                <div className="font-medium">{String(v)}</div>
+              <div key={k} className="flex flex-col sm:flex-row sm:justify-between sm:items-center bg-[#F7F7F7] gap-1 sm:gap-4 rounded-[20px] px-4 sm:px-6 py-3 sm:py-4">
+                <div className="text-gray-500 text-sm sm:text-base">{k}</div>
+                <div className="font-medium text-black break-words">{String(v)}</div>
               </div>
             ))
           )}
         </div>
-      </div>
+      </CollapsibleSection>
 
       <div className="mt-16">
         <Footer />
       </div>
+      
+      {/* Boost Shop Modal */}
+      {showBoostShop && (
+        <PlantBoostShop
+          plant={{
+            product_id: product.id,
+            product_name: product.name,
+            nickname: growthInfo?.adoption_nickname
+          }}
+          balance={userBalance}
+          onClose={() => setShowBoostShop(false)}
+          onActionComplete={async (newBalance, spentDelta = 0) => {
+            setUserBalance(newBalance);
+            // Перезагружаем действия
+            getProductGrowth(productId).then(res => {
+              if (res.ok) {
+                setProductActions(res.data.recent_actions || []);
+              }
+            });
+            // Пробуем обновить статистику, чтобы «Потрачено» и «Бусты» не были 0
+            try {
+              const statsRes = await getUserStats();
+              if (statsRes.ok && statsRes.data?.stats) {
+                // сохраняем в localStorage, чтобы MyPlants мог воспользоваться при следующем рендере
+                const s = statsRes.data.stats;
+                const boosted = {
+                  ...s,
+                  boosts: spentDelta > 0 ? (s.boosts || 0) + 1 : s.boosts,
+                  total_spent: spentDelta > 0 ? (s.total_spent || 0) + spentDelta : s.total_spent
+                };
+                localStorage.setItem('gryadka_cached_stats', JSON.stringify(boosted));
+                localStorage.setItem('gryadka_cached_level', JSON.stringify(statsRes.data.level));
+              }
+            } catch (e) {
+              console.error("Failed to refresh stats after boost", e);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

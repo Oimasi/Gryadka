@@ -11,11 +11,13 @@ import {
 } from "../../api";
 import { Footer } from "./Footer";
 
+const PRICE_MARKUP = 1.15;
+
 function CertificatesSection({ certifications, onAdd, onUpdate, onRemove }) {
   return (
     <div className="mt-4">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h5 className="font-semibold text-black text-[20px] mb-5">Сертификаты</h5>
+        <h5 className="font-semibold text-black text-[20px] mb-5">Сертификаты <span className="text-xs font-normal text-gray-400">(данные из системы ВетИС)</span></h5>
         <button type="button" className="text-sm text-blue-600" onClick={onAdd}>+ Добавить</button>
       </div>
       {(!certifications || certifications.length === 0) && <div className="text-sm text-gray-500 mt-3">Нет сертификатов</div>}
@@ -604,7 +606,12 @@ function ProductPassportForm({ passport = null, onChange, onAddCertificate, onUp
 
 const getInitialPrice = (initial) => {
   if (!initial) return "";
-  return initial.price ?? initial.price_value ?? (initial.price && initial.price.amount) ?? "";
+  const raw = initial.price ?? initial.price_value ?? (initial.price && initial.price.amount);
+  if (raw === undefined || raw === null || raw === "") return "";
+  const numeric = Number(raw);
+  if (Number.isNaN(numeric)) return "";
+  const base = numeric / PRICE_MARKUP;
+  return Math.round(base * 100) / 100;
 };
 
 export default function ProductForm({ initial = null, user = null, onDone = null, onCancel = null, setMsg = null }) {
@@ -629,6 +636,8 @@ export default function ProductForm({ initial = null, user = null, onDone = null
   const [category, setCategory] = useState(
     initial?.category ?? initial?.category_name ?? initial?.category_id ?? ""
   );
+  const [isHalal, setIsHalal] = useState(initial?.is_halal ?? false);
+  const [isLenten, setIsLenten] = useState(initial?.is_lenten ?? false);
   // Генерация уникального ID для сертификатов
   const genUid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   // Функции для управления сертификатами
@@ -767,6 +776,8 @@ export default function ProductForm({ initial = null, user = null, onDone = null
       farm_id: farmId || null,
       category: category || undefined,
       is_growing: isGrowing,
+      is_halal: isHalal,
+      is_lenten: isLenten,
       passport: {
         origin: passportCopy.origin || null,
         variety: passportCopy.variety || null,
@@ -888,6 +899,27 @@ export default function ProductForm({ initial = null, user = null, onDone = null
               </option>
             ))}
           </select>
+        </div>
+        <div className="mb-5 row">
+          <p className="label mb-2">Дополнительные требования</p>
+          <div className="flex flex-wrap gap-6 items-center">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isHalal}
+                onChange={(e) => setIsHalal(e.target.checked)}
+              />
+              <span className="text-gray-700">Халяль</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isLenten}
+                onChange={(e) => setIsLenten(e.target.checked)}
+              />
+              <span className="text-gray-700">Постное</span>
+            </label>
+          </div>
         </div>
         <div className="mb-5 row">
           <label className="label" htmlFor="product-farm">Ферма</label>
